@@ -14,5 +14,5 @@ vec3 normalized_vertex_to_light_vector = normalize(vertex_to_light_vector);
 
 float DiffuseTerm = clamp(dot(normal, vertex_to_light_vector), 0.0, 1.0);
 
-	gl_FragColor =  vec4(0.0,0.0,0.0,0.0);//gl_Color;// * DiffuseTerm;
+	gl_FragColor = gl_Color;// * DiffuseTerm;
 }
