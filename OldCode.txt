@@ -1,0 +1,390 @@
+
+//========================================================================================================================================
+//    REASON:          Need to Try rendering a color scene to ensure my texture mapping is correct                                                                                                                        
+//========================================================================================================================================
+
+
+GLuint ShadowBufferName, ShadowTex;
+glGenFramebuffersEXT(1, &ShadowBufferName);
+glBindFramebufferEXT(GL_FRAMEBUFFER, ShadowBufferName);
+
+glGenTextures(1, &ShadowTex);
+glBindTexture(GL_TEXTURE_2D, ShadowTex);
+
+glTexImage2D(GL_TEXTURE_2D, 0,GL_DEPTH_COMPONENT16, 1024, 1024, 0, GL_DEPTH_COMPONENT, GL_FLOAT, 0);
+
+glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+//ATTACHES THE DEPTHS BUFFER TO THE TEXTURE SINCE WE DONT NEED THE COLOR THE DEPTH INFO IS RENDERED TO THE TEXTURE
+glFramebufferTexture2DEXT(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, ShadowTex, 0);
+glDrawBuffer(GL_NONE); // No color buffer is drawn to.
+glReadBuffer(GL_NONE); // Not in original tutorial
+// Always check that our framebuffer is ok
+if(glCheckFramebufferStatusEXT(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) glBindFramebufferEXT(GL_FRAMEBUFFER,0);
+
+
+
+TextureBuffer *ShadUV = new TextureBuffer(ShadowTexture, SUVs,4);
+
+
+float worldToLightViewMatrix[16];
+float lightViewToProjectionMatrix[16];
+glGetFloatv(GL_MODELVIEW_MATRIX, worldToLightViewMatrix);
+glGetFloatv(GL_PROJECTION_MATRIX, lightViewToProjectionMatrix);
+
+//-------------------------------------------------------------------------------------------------------------------
+
+
+   ShadowShader.Enable();
+     
+                  // 1. first render to depth map
+glViewport(0, 0, 1024, 1024);
+glBindFramebufferEXT(GL_FRAMEBUFFER,ShadowBufferName );
+glClear(GL_DEPTH_BUFFER_BIT);
+
+Batcher.Render();
+glBindFramebufferEXT(GL_FRAMEBUFFER, 0);
+// 2. then render scene as normal with shadow mapping (using depth map)
+glViewport(0, 0,640,480);
+glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+glBindTexture(GL_TEXTURE_2D, ShadowTex);
+
+
+
+
+
+
+
+
+
+//    REASON:          Need to work out more information about framebuffer to texture renering before performing on the Shadowmap                                                                                                                           
+//========================================================================================================================================
+//         
+
+
+unsigned int texture;
+glGenTextures(1, &texture);
+glBindTexture(GL_TEXTURE_2D, texture);
+  
+glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 800, 600, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+
+glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);  
+glFramebufferTexture2DEXT(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texture, 0);  
+
+
+
+
+//========================================================================================================================================
+//    REASON:          OLD NORMAL DRAWING ATTEMPTS                                                                                                                                  
+//========================================================================================================================================
+
+//
+//  for(int Index = 0; Index < 24; Index += 1)
+//  {
+//      glVertex3f(Pos1.x, Pos1.y, Pos1.z);
+//      glVertex3f(Pos2.x, Pos2.y, Pos2.z);
+//
+//  }
+//
+
+//  for(int Index =0; Index < 24;Index+=4)
+//  {
+//      float NX = 0,
+//            NY = 0, 
+//            NZ = 0;
+//      Pos1 =((Verts[Index]   ) + 
+//             (Verts[Index+1] ) +
+//             (Verts[Index+2] )) / 3.0f;
+//
+//      Pos2 =((Verts[Index]   +( Norms[Index]   * L)) + 
+//             (Verts[Index+1] +( Norms[Index+1] * L)) + 
+//             (Verts[Index+2] +( Norms[Index+2] * L))) / 3.0f;
+//
+//      glVertex3f(Position.x + Pos1.x, Position.y + Pos1.y,Position.z + Pos1.z);
+//      glVertex3f(Position.x + Pos2.x, Position.y + Pos2.y,Position.z + Pos2.z);
+//
+//
+//      Pos3 =((Verts[Index]   ) + 
+//             (Verts[Index+1] ) +
+//             (Verts[Index+2] ) +
+//             (Verts[Index+3] )) / 4.0f;
+//
+//      Pos4 =((Verts[Index]   +( Norms[Index]   * L)) + 
+//             (Verts[Index+1] +( Norms[Index+1] * L)) + 
+//             (Verts[Index+2] +( Norms[Index+2] * L)) + 
+//             (Verts[Index+3] +( Norms[Index+3] * L))) / 4.0f;
+//
+//      glVertex3f(Position.x + Pos3.x, Position.y + Pos3.y,Position.z + Pos3.z);
+//      glVertex3f(Position.x + Pos4.x, Position.y + Pos4.y,Position.z + Pos4.z);
+//
+//
+//     // glVertex3f(Verts[Index].x + Position.x,
+//     //            Verts[Index].y + Position.y,
+//     //            Verts[Index].z + Position.z);
+//     //
+//     // glVertex3f(Verts[Index].x + Position.x + Norms[Index].x * L,
+//     //            Verts[Index].y + Position.y + Norms[Index].y * L,
+//     //            Verts[Index].z + Position.z + Norms[Index].z * L);
+//  }
+
+   
+#endif
+
+
+
+
+     //  Pos1   = ((VertexList[IndexList[Index]]   + Position) +
+     //            (VertexList[IndexList[Index+1]] + Position) + (VertexList[IndexList[Index+3]] + Position) +
+     //            (VertexList[IndexList[Index+2]] + Position)) / 4.0f;
+     //         
+     //
+     //  Offset = (NormalList[IndexList[Index]]   +
+     //            NormalList[IndexList[Index+1]] +   NormalList[IndexList[Index+3]] +
+     //            NormalList[IndexList[Index+2]]) / 4.0f;
+     //
+
+//========================================================================================================================================
+//    REASON:                                                                                                                                              
+//========================================================================================================================================
+
+
+
+
+
+//glfwGetCursorPos(SCREEN->glCONTEXT, &SCREEN->MOUSE.X, &SCREEN->MOUSE.Y);
+//SCREEN->MOUSE.MouseMoveX =  SCREEN->MOUSE.OldX - SCREEN->MOUSE.X ;
+//SCREEN->MOUSE.MouseMoveY = SCREEN->MOUSE.Oldy - SCREEN->MOUSE.Y;
+//SCREEN->MOUSE.OldX = SCREEN->MOUSE.X;
+//SCREEN->MOUSE.Oldy = SCREEN->MOUSE.Y;
+//        
+//if (SCREEN->Callbacks.CallBackOnMouseMove != nullptr)SCREEN->Callbacks.CallBackOnMouseMove(SCREEN->MOUSE.X, SCREEN->MOUSE.Y, 0, 0, SCREEN->MOUSE.Button[0], SCREEN->MOUSE.Button[1],SCREEN->MOUSE.Button[2]);
+//
+
+
+
+
+
+
+
+
+
+class BatchRender
+{
+public:
+    BatchRender();
+   ~BatchRender();
+
+   GLuint ElementCount;
+
+   std::vector<Block *> Objects;
+
+   std::vector<Vec3> Vertices;
+   std::vector<Vec2> Textures;
+   std::vector<Vec3> Colors;
+   std::vector<Vec3> Normals;
+   std::vector<GLushort> Indices;
+
+
+
+   VertexBuffer  *BatchVertices;
+   TextureBuffer *BatchTextures;
+   ColorBuffer   *BatchColors;
+   NormalBuffer  *BatchNormals;
+   IndexBuffer   *BatchIndices;
+
+   GLuint IndicesCount;
+
+   void Submit(Block *object);
+
+   void Render();
+
+   void Init();
+
+   void Bind();
+   void Unbind();
+};
+
+//===================================================================================================================================================
+//__________________________________ BATCH RENDERING CLASS _________________________________________________________________________________________________
+
+BatchRender::BatchRender() : ElementCount(0), IndicesCount(0)
+{
+
+}
+
+BatchRender::~BatchRender()
+{
+
+}
+
+
+void BatchRender::Init()
+{
+
+    BatchVertices = new VertexBuffer (&Vertices[0] , 24 * (ElementCount ));
+    BatchIndices  = new IndexBuffer  (&Indices[0]  , 36 * (ElementCount ));
+    BatchColors   = new ColorBuffer  (&Colors[0]   , 24 * (ElementCount ));
+    BatchNormals  = new NormalBuffer (&Normals[0]  , 24 * (ElementCount ));
+    BatchTextures = new TextureBuffer(BlockTexture , &Textures[0], 24 *( ElementCount ));
+
+}
+
+
+void BatchRender::Submit(Block *object)
+{
+    Objects.push_back(object);
+
+    for_loop(Index, 24)
+    {
+        Vec3 pos = object->Verts[Index] + object->Position;
+        Vertices.push_back(pos); //object->Verts[Index] += object->Position;
+    }
+    for_loop(Index, 36)
+    {
+        GLushort Inds = object->Indice[Index] + IndicesCount;
+        Indices.push_back(Inds);
+         
+    }
+    IndicesCount += 36;
+
+
+    for_loop(Index, 24)
+    {
+        Normals.push_back(object->Norms[Index]);
+    }
+
+    for_loop(Index, 24)
+    {
+       
+        Colors.push_back(object->Color[Index]);
+    }
+
+
+
+    for_loop(Index, 24)
+    {
+        Textures.push_back(object->UV[24]);
+    }
+        ElementCount++;
+}
+
+
+
+void BatchRender::Bind()
+{
+     BatchVertices->Bind();
+     BatchIndices->Bind();
+  //   BatchTextures->Bind();
+ //    BatchNormals->Bind();
+      BatchColors->Bind();
+}
+void BatchRender::Unbind()
+{
+    
+     BatchIndices->Unbind();
+  //   BatchNormals->Unbind();
+ //    BatchTextures->Unbind();
+     BatchColors->Unbind();
+     BatchVertices->Unbind();
+}
+void BatchRender::Render()
+{
+  //  glEnd();
+      glPushMatrix();
+  //  
+  //      glTranslatef(Position.x, Position.y, Position.z);
+  //      glRotatef(Rotation.x, 1.0f, 0.0f, 0.0f);
+  //      glRotatef(Rotation.y, 0.0f, 1.0f, 0.0f);
+  //      glRotatef(Rotation.z, 0.0f, 0.0f, 1.0f);
+  //
+        Bind();
+            glDrawElements(GL_TRIANGLES, (ElementCount - 1 ) * 36 , GL_UNSIGNED_SHORT, nullptr);
+        Unbind();
+    glPopMatrix();
+}
+
+
+
+
+
+
+
+
+//========================================================================================================================================
+//    REASON:                OLD BUFFER MANAGEMENT SYSTEM ATTRIBUTES ARE CREATED INDEPENDENTLY NOW                                                                                                                                    
+//========================================================================================================================================
+
+
+//
+///// Hmmmmm Cant KEEP THIS UP,. MUST FIND A BETTER WAY TO HANDLE THE BUFFERING AND MANAGEMENT OF THE MESH DATA
+//VertexBuffer::VertexBuffer(Vec3 *Vertexdata,Vec3 *Colordata ,Vec3 *Normals ,GLsizei vcount, GLint colorcount, GLint normalCount)
+//    :Elem(vcount), 
+//     ColorCount(colorcount),
+//     NormalCount(normalCount)
+//{
+//    if(Colordata != nullptr){
+//            glGenBuffers(3 , &ID[0]);
+//            glBindBuffer(GL_ARRAY_BUFFER, ID[0]);
+//                glBufferData(GL_ARRAY_BUFFER,VertexCount * sizeof(Vec3), Vertexdata, GL_STATIC_DRAW) ; 
+//            glBindBuffer(GL_ARRAY_BUFFER,0);         // Unbind BUFFER_ID since its now bound to the ID;
+//    }
+//
+//     if(Vertexdata != nullptr){
+//            glBindBuffer(GL_ARRAY_BUFFER, ID[1]); // Bind our second Vertex Buffer Object  
+//                glBufferData(GL_ARRAY_BUFFER, ColorCount * (sizeof(float) * 4), Colordata, GL_STATIC_DRAW); // Set the size and data of our VBO and set it to STATIC_DRAW  
+//                glVertexAttribPointer((GLuint)1, 3, GL_FLOAT, GL_FALSE, 0, 0); // Set up our vertex attributes pointer  
+//                    glEnableVertexAttribArray(1); 
+//            glBindBuffer(GL_ARRAY_BUFFER,0);         // Unbind BUFFER_ID since its now bound to the ID;}
+//     } 
+//     if(Normals != nullptr){
+//            glBindBuffer(GL_ARRAY_BUFFER, ID[2]); // Bind our second Vertex Buffer Object  
+//                glBufferData(GL_ARRAY_BUFFER, NormalCount * sizeof(Vec3), Normals, GL_STATIC_DRAW); // Set the size and data of our VBO and set it to STATIC_DRAW  
+//                glVertexAttribPointer((GLuint)1, 3, GL_FLOAT, GL_FALSE, 0, 0); // Set up our vertex attributes pointer  
+//                    glEnableVertexAttribArray(2); 
+//            glBindBuffer(GL_ARRAY_BUFFER,0);         // Unbind BUFFER_ID since its now bound to the ID;}
+//     }
+//
+//}
+//
+
+
+
+
+//========================================================================================================================================
+//    REASON:                                                                                                                                                    
+//========================================================================================================================================
+
+
+
+
+
+//void GenVertexArrays(GLsizei n, GLuint *arrays);
+//===================================================================================================================================================
+//_______________________________________BUFFER CLASS _______________________________________________________________________________________________
+//
+//
+//
+//
+//
+//          glBindBuffer(GL_ARRAY_BUFFER, ID[1]); // Bind our second Vertex Buffer Object  
+//              glBufferData(GL_ARRAY_BUFFER, ColorCount * (sizeof(float) * 4), Colordata, GL_STATIC_DRAW); // Set the size and data of our VBO and set it to STATIC_DRAW  
+//              glVertexAttribPointer((GLuint)1, 3, GL_FLOAT, GL_FALSE, 0, 0); // Set up our vertex attributes pointer  
+//                  glEnableVertexAttribArray(1); 
+//          glBindBuffer(GL_ARRAY_BUFFER,0);         // Unbind BUFFER_ID since its now bound to the ID;}
+//
+//
+//
+//          glDisableClientState(GL_COLOR_ARRAY);
+//
+//
+
+
+
+
+//========================================================================================================================================
+//     REASON:                                                                                                                                                   
+//========================================================================================================================================

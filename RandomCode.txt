@@ -1,0 +1,173 @@
+//================================================================================================================================
+//                                                                                                                                                                                                                         
+//                                                                                                                                                                                                                         
+//                                         RANDOM CODE POSSIBLY USEFULL                                                                                                                                                                                
+// format: [Date][Time]
+//         [Description]                                                                                                                                                                                                               
+//         [Code]                                                                                                                                                                                                                
+//         [Implementation differences]                                                                                                                                                                                                                
+//================================================================================================================================
+
+// [6/62018][9pm]
+// [https://stackoverflow.com/questions/8866904/differences-and-relationship-between-glactivetexture-and-glbindtexture]
+//  Object Management Code                                                                                                                                                                                                                        
+// Code that shows ways OpenGL manages their object system such as textures vertexbuffers framebuffers etc.
+
+struct Object
+{
+    int count;
+    float opacity;
+    char *name;
+};    
+
+Object *g_objs[MAX_LOCATIONS] = {NULL};    
+void BindObject(int loc, Object *obj)
+{
+  g_objs[loc] = obj;
+}
+
+void ObjectParameteri(int loc, ObjectParameters eParam, int value)
+{
+  if(g_objs[loc] == NULL)
+    return;
+
+  switch(eParam)
+  {
+    case OBJECT_COUNT:
+      g_objs[loc]->count = value;
+      break;
+    case OBJECT_OPACITY:
+      g_objs[loc]->opacity = (float)value;
+      break;
+    default:
+      //INVALID_ENUM error
+      break;
+  }
+}
+
+// ACTIVATE TEXTURES
+
+Object *g_objs[MAX_OBJECTS][MAX_LOCATIONS] = {NULL};
+int g_currObject = 0;
+
+void BindObject(int loc, Object *obj)
+{
+  g_objs[g_currObject][loc] = obj;
+}
+
+void ActiveObject(int currObject)
+{
+  g_currObject = currObject;
+}
+
+glActiveTexture(GL_TEXTURE0 + i);  // where i is a number between 0 and GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS.   
+                                                                                                                                                                                                         
+//         [Implementation differences]  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// [6/62018][9pm]
+//[http://fabiensanglard.net/shadowmapping/]
+//  Shadow in Earlier OpenGL                                                                                                                                                                                                                  
+// Code that shows ways to perform Shadow Rendering in earlier OpenGL
+
+	// Hold id of the framebuffer for light POV rendering
+	GLuint fboId;
+
+	// Z values will be rendered to this texture when using fboId framebuffer
+	GLuint depthTextureId;
+					
+	void generateShadowFBO()
+	{
+	  int shadowMapWidth = RENDER_WIDTH * SHADOW_MAP_RATIO;
+	  int shadowMapHeight = RENDER_HEIGHT * SHADOW_MAP_RATIO;
+	
+	  GLenum FBOstatus;
+
+	  // Try to use a texture depth component
+	  glGenTextures(1, &depthTextureId);
+	  glBindTexture(GL_TEXTURE_2D, depthTextureId);
+
+	  // GL_LINEAR does not make sense for depth texture. However, next tutorial shows usage of GL_LINEAR and PCF
+	  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+	  // Remove artifact on the edges of the shadowmap
+	  glTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP );
+	  glTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP );
+
+	  // No need to force GL_DEPTH_COMPONENT24, drivers usually give you the max precision if available
+	  glTexImage2D( GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, shadowMapWidth, shadowMapHeight, 0, GL_DEPTH_COMPONENT, GL_UNSIGNED_BYTE, 0);
+	  glBindTexture(GL_TEXTURE_2D, 0);
+
+	  // create a framebuffer object
+	  glGenFramebuffersEXT(1, &fboId);
+	  glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, fboId);
+
+	  // Instruct openGL that we won't bind a color texture with the currently bound FBO
+	  glDrawBuffer(GL_NONE);
+	  glReadBuffer(GL_NONE);
+ 
+	  // attach the texture to FBO depth attachment point
+	  glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_DEPTH_ATTACHMENT_EXT,GL_TEXTURE_2D, depthTextureId, 0);
+
+	  // check FBO status
+	  FBOstatus = glCheckFramebufferStatusEXT(GL_FRAMEBUFFER_EXT);
+	  if(FBOstatus != GL_FRAMEBUFFER_COMPLETE_EXT)
+		  printf("GL_FRAMEBUFFER_COMPLETE_EXT failed, CANNOT use FBO\n");
+
+	  // switch back to window-system-provided framebuffer
+	  glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
+	}
+
+
+
+
+
+
+
+
+
+		void setTextureMatrix(void)
+	{
+		static double modelView[16];
+		static double projection[16];
+		
+		// Moving from unit cube [-1,1] to [0,1]  
+		const GLdouble bias[16] = {	
+			0.5, 0.0, 0.0, 0.0, 
+			0.0, 0.5, 0.0, 0.0,
+			0.0, 0.0, 0.5, 0.0,
+		0.5, 0.5, 0.5, 1.0};
+		
+		// Grab modelview and transformation matrices
+		glGetDoublev(GL_MODELVIEW_MATRIX, modelView);
+		glGetDoublev(GL_PROJECTION_MATRIX, projection);
+		
+		
+		glMatrixMode(GL_TEXTURE);
+		glActiveTextureARB(GL_TEXTURE7);
+		
+		glLoadIdentity();	
+		glLoadMatrixd(bias);
+		
+		// concatating all matrices into one.
+		glMultMatrixd (projection);
+		glMultMatrixd (modelView);
+		
+		// Go back to normal matrix mode
+		glMatrixMode(GL_MODELVIEW);
+	}			
+	

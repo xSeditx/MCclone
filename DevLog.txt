@@ -1,0 +1,21 @@
+|                                                                                                                                         
+|                                                                                                                                         
+|                                                                                                                                         
+|                                                 MINECRAFT VOXLE ENGINE                                                                                        
+|                                                                                                                                         
+|                                                                                                                                                     
+|_________________________________________________________________________________________________________________________________________|
+
+
+
+ AN ALL PURPOSE RENDERING ENGINE IN C++ WITH PRIMARY FOCUS ON VOXEL CUBE RENDERING
+
+
+
+May 30
+Started process built the rendering engine, camera controls, buffers etc and laid out the framework in good time binding it with GLM
+
+June 2
+Stuck on texturing but managed to get that working. 
+
+
