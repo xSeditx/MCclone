@@ -1,4 +1,111 @@
 
+
+//========================================================================================================================================
+//    REASON:          Contained FrameBuffer into is own Manager class that also contains a renderable Quad for 
+//                     Visualization and Debugging of FrameBuffer                                                                                                                       
+//========================================================================================================================================
+
+
+        Vec2 SUVs[] = {
+                     Vec2(0.00f, 1.00f),
+                     Vec2(0.00f, 0.00f),
+                     Vec2(1.00f, 0.00f),
+                     Vec2(1.00f, 1.00f)
+        };
+
+//        GLuint PlaneUV;
+//        glGenBuffers(1, &PlaneUV);
+//        glBindBuffer(GL_ARRAY_BUFFER, PlaneUV);
+//        glBufferData(GL_ARRAY_BUFFER, sizeof(Vec2) * 4 , SUVs, GL_STATIC_DRAW);
+//        glBindBuffer(GL_ARRAY_BUFFER, 0);
+//
+//
+//
+//GLuint frameBuffer;
+//_GL(   glGenFramebuffersEXT(1, &frameBuffer));
+//_GL( glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, frameBuffer));
+//
+//GLuint texColorBuffer;
+//_GL( glGenTextures(1, &texColorBuffer));
+//_GL( glBindTexture(GL_TEXTURE_2D, texColorBuffer));
+//
+//
+//_GL( glTexImage2D
+//        (GL_TEXTURE_2D, 0, GL_RGBA, 640, 640, 0, GL_RGBA, GL_UNSIGNED_INT, NULL));
+//
+//_GL( glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR));
+//_GL( glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR));
+//_GL( glFramebufferTexture2DEXT
+//        (GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, GL_TEXTURE_2D, texColorBuffer, 0));
+//
+//if(_GL( glCheckFramebufferStatusEXT(GL_FRAMEBUFFER_EXT)) != GL_FRAMEBUFFER_COMPLETE_EXT)
+//{
+//	std::cout << "ERROR::FRAMEBUFFER:: Framebuffer is not complete!" << std::endl;
+//    _GL( glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0)); 
+//}
+//_GL( glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0)); 
+//
+//GLuint rboDepthStencil;
+//glGenRenderbuffersEXT(1, &rboDepthStencil);
+//glBindRenderbufferEXT(GL_RENDERBUFFER, rboDepthStencil);
+//glRenderbufferStorageEXT(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, 800, 600);
+//glFramebufferRenderbufferEXT(
+//    GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rboDepthStencil
+//);
+//glBindRenderbufferEXT(GL_RENDERBUFFER,0);
+
+
+------------------------------------
+
+
+         
+//ShadowShader.Enable();
+//       
+//
+// ShadowShader.Enable();
+//
+//_GL( glBindFramebufferEXT(GL_FRAMEBUFFER, frameBuffer));
+//  // glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT );
+// #if 0
+//            for(auto &Block : Chunk)
+//            {
+//                Block->Render();
+//            }
+//#else
+//            Batcher.Render();
+//
+//#endif
+//_GL( glBindFramebufferEXT(GL_FRAMEBUFFER, 0) );
+//
+//_GL( glPushMatrix());
+//_GL( glMatrixMode(GL_MODELVIEW));
+//_GL( glTranslatef(10.0,-6.5,10.0));
+//Plane.Bind();
+//    PlanIndex.Bind();
+//       _GL(  glBindTexture(GL_TEXTURE_2D, texColorBuffer));
+//
+//       _GL(  glBindBuffer(GL_ARRAY_BUFFER, PlaneUV));
+//       _GL(  glTexCoordPointer(2, GL_FLOAT, 0, (char *) NULL));
+//       _GL(  glEnableClientState(GL_TEXTURE_COORD_ARRAY));
+//
+//           _GL(  glDrawElements(GL_TRIANGLES, PlanIndex.ElementCount , GL_UNSIGNED_INT, nullptr));
+//
+//        _GL( glBindBuffer(GL_ARRAY_BUFFER, 0));
+//
+//
+//        _GL( glBindTexture(GL_TEXTURE_2D, 0));
+//    PlanIndex.Unbind();
+//Plane.Unbind();
+//_GL( glPopMatrix());
+
+
+//    ShadowShader.Disable();
+
+
+
+
+
+
 //========================================================================================================================================
 //    REASON:          Need to Try rendering a color scene to ensure my texture mapping is correct                                                                                                                        
 //========================================================================================================================================

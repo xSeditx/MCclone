@@ -1,3 +1,12 @@
+http://carloscarrasco.com/faking-mesh-instancing-in-opengl-es-20.html
+
+
+
+
+
+
+
+
 //================================================================================================================================
 //                                                                                                                                                                                                                         
 //                                                                                                                                                                                                                         
@@ -171,3 +180,44 @@ glActiveTexture(GL_TEXTURE0 + i);  // where i is a number between 0 and GL_MAX_C
 		glMatrixMode(GL_MODELVIEW);
 	}			
 	
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//================================================================================================================================
+//                                                                                                                                                                                                                         
+//                                                                                                                                                    
+//                                                                                                                                                                                
+//  
+//                                                                                                                                                                
+//                                                                                                                                                          
+//                                                                                                                                                                                
+//================================================================================================================================
+
+
+//================================================================================================================================
+//                                                    FRAMEBUFFER OBJECTS                                                                                                                                       
+//================================================================================================================================
+
+
+
+Framebuffers Objects (FBOs)
+____________________________
+
+In OpenGL we can implement this technique by using Framebuffer objects (FBOs). These FBOs are not actually buffers,
+they just hold attachements (actual buffers) to read or write them during rendering time. The Framebuffer is llke a 
+manager for these attachements which in the end they are textures or Renderbuffers (not covered here). Framebuffers (FBOs)
+were introduced in OpenGL core since version 3.0 was out and they offers a great control over how the textures are 
+stored and used. Prior to version 3.0 you had to use ARB extensions.

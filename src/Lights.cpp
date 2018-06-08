@@ -28,7 +28,7 @@ extern Texture *ShadowTexture;
     
 
     // SetPosition(pos, pos);
-     _GL(glEnable(GL_COLOR_MATERIAL));
+   
 }
 
  void LightSource::SetAmbient(RGBAf color)

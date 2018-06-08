@@ -62,9 +62,12 @@ void main()
 
     float Angle = 0;
     float OLDMX = 0, OLDMY = 0;
-    Window MainWin(0,0,640,480,"Test OpenGL Window");
+    Window MainWin(0,0,640,640,"Test OpenGL Window");
            MainWin.Callbacks.SetOnKeyHold(Keydown);
-           
+    SCREEN->MOUSE.X = 0; SCREEN->MOUSE.Y = 0; // Have no idea why if this is not Initialized (AGAIN) to zero it returns
+                                              // #IND throwing all my Rendering off since it reads the Mouse position to position the Camera
+                                              // Only if mouse is not in borders of window during load though
+
     BlockTexture  = new Texture("Kait.bmp");
     StoneTexture  = new Texture("Stone.bmp");
     ShadowTexture = new Texture();
@@ -78,20 +81,7 @@ void main()
         
         
         BatchRender Batcher;
-        
-        Vec3 Data[4] = {
-            Vec3(-10,10,-10),
-            Vec3( 10,10,-10),
-            Vec3( 10,10, 10),
-            Vec3(-10,10, 10),
-        };
-        GLuint IndData[] = {
-            0,1,2 , 0,2,3
-        };
-        
-        VertexBuffer Plane(Data,4);
-        IndexBuffer PlanIndex(IndData,6);
-        
+                
         Camera1.Position = Vec3(0,0,-33);
         Camera1.Rotation = Vec3(-180,180,0);
         Chunk.reserve(CHUNK_SIZE*CHUNK_SIZE);
@@ -120,8 +110,8 @@ void main()
         
         Batcher.Init();
         
-        // glEnable(GL_CULL_FACE); 
-        // glCullFace(GL_BACK);
+      //  glEnable(GL_CULL_FACE); 
+     //   glCullFace(GL_BACK);
         
         
         float Brightness = .5;
@@ -141,63 +131,16 @@ void main()
         m_Shader.Disable();
         ShadowShader.Disable();  // Just making sure everything is off at the start
 
-
-
-        Vec2 SUVs[] = {
-                     Vec2(.00f, 1.00f),
-                     Vec2(0.00f, 0.00f),
-                     Vec2(1.00f, 0.00f),
-                     Vec2(1.00f, 1.00f)
-        };
-        GLuint PlaneUV;
-        glGenBuffers(1, &PlaneUV);
-        glBindBuffer(GL_ARRAY_BUFFER, PlaneUV);
-        glBufferData(GL_ARRAY_BUFFER, sizeof(Vec2) * 4 , SUVs, GL_STATIC_DRAW);
-        glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-
  
+        FrameBuffer *FB = new FrameBuffer(&m_Shader);
+                     FB->PositionQuad(Vec3(10, 5.5,10));
+        
 
-GLuint frameBuffer;
-glGenFramebuffersEXT(1, &frameBuffer);
-glBindFramebufferEXT(GL_FRAMEBUFFER, frameBuffer);
-
-GLuint texColorBuffer;
-glGenTextures(1, &texColorBuffer);
-glBindTexture(GL_TEXTURE_2D, texColorBuffer);
-
-
-
-glTexImage2D
-    (GL_TEXTURE_2D, 0, GL_RGB, 640, 480, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
-
-glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-glFramebufferTexture2DEXT
-    (GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texColorBuffer, 0);
-
-if(glCheckFramebufferStatusEXT(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
-{
-	std::cout << "ERROR::FRAMEBUFFER:: Framebuffer is not complete!" << std::endl;
-    glBindFramebufferEXT(GL_FRAMEBUFFER, 0); 
-}
-
-    glBindFramebufferEXT(GL_FRAMEBUFFER, 0); 
-
-//GLuint rboDepthStencil;
-//glGenRenderbuffersEXT(1, &rboDepthStencil);
-//glBindRenderbufferEXT(GL_RENDERBUFFER, rboDepthStencil);
-//glRenderbufferStorageEXT(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, 800, 600);
-//glFramebufferRenderbufferEXT(
-//    GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rboDepthStencil
-//);
-//glBindRenderbufferEXT(GL_RENDERBUFFER,0);
-
+        
         while(GAME_LOOP())
         {
-            CLS(0xffffff);
-     
+            CLS();
+
             Angle++; if(Angle > 360)Angle = 0;
         
             if(SCREEN->KEY_BOARD.Key == GLFW_KEY_RIGHT){Camera1.MoveRight(.1);} 
@@ -210,44 +153,20 @@ if(glCheckFramebufferStatusEXT(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
             OLDMY = SCREEN->MOUSE.Y; // Must gather the true mousemovement here in this function 
             Camera1.Update();                             // <---- CAMERA                 
           //  Light.SetPosition(Vec3(std::cos(RADIANS(Angle)),0,sin(RADIANS(Angle))), Vec3(0, Camera1.Rotation.y,0));
-        
 
-glBindFramebufferEXT(GL_FRAMEBUFFER, frameBuffer);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    Batcher.Render();
+FB->Bind();
+#    if 0
+         for(auto &Block : Chunk)
+         {
+             Block->Render();
+         }
+#    else
+         Batcher.Render();
+#    endif
 
+FB->Unbind();
 
-glBindFramebufferEXT(GL_FRAMEBUFFER, 0);
-
-
-
-
-
-
-
-glPushMatrix();
-
-glMatrixMode(GL_MODELVIEW);
-glTranslatef(10.0,-7.0,10.0);
-
-Plane.Bind();
-    PlanIndex.Bind();
-        glBindTexture(GL_TEXTURE_2D, texColorBuffer);
-
-        glBindBuffer(GL_ARRAY_BUFFER, PlaneUV);
-        glTexCoordPointer(2, GL_FLOAT, 0, (char *) NULL);
-        glEnableClientState(GL_TEXTURE_COORD_ARRAY);
-
-            glDrawElements(GL_TRIANGLES, PlanIndex.ElementCount , GL_UNSIGNED_INT, nullptr);
-
-        glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-
-        glBindTexture(GL_TEXTURE_2D, 0);
-    PlanIndex.Unbind();
-Plane.Unbind();
-
-glPopMatrix();
+FB->Render();
 
 
             m_Shader.Enable();
@@ -259,7 +178,10 @@ glPopMatrix();
 #else
             Batcher.Render();
 #endif
-            m_Shader.Disable();
+
+
+
+
 
             // Print(Camera1.Position.x << Camera1.Position.y << Camera1.Position.z );
             // Print(Camera1.Rotation.x << " : " << Camera1.Rotation.y << ": " << Camera1.Rotation.z); 
@@ -268,5 +190,5 @@ glPopMatrix();
             SYNC();
       }
 
-glDeleteFramebuffersEXT(1, &frameBuffer);
+//glDeleteFramebuffersEXT(1, &frameBuffer);
 }

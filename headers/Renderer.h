@@ -39,9 +39,13 @@ class VertexBuffer{
         GLuint ID;
         GLint  ElementCount; 
 
+        Vec3  *Data;
+
         void Bind();
         void Unbind();
 };  
+
+
 class ColorBuffer
 {
    public:
@@ -52,6 +56,9 @@ class ColorBuffer
 
         GLuint ID;
         GLint  ElementCount; 
+
+        Vec4 *Data;
+
     public:
         void Bind();
         void Unbind();
@@ -65,10 +72,14 @@ class NormalBuffer
 
         GLuint ID;
         GLint  ElementCount; 
+        Vec3  *Data;
+
     public:
         void Bind();
         void Unbind();
 };
+
+
 class IndexBuffer
 {
     public:
@@ -78,6 +89,7 @@ class IndexBuffer
 
         GLuint ID;
         GLuint ElementCount;
+        GLuint *Data;
 
     public:
         void Bind();
@@ -94,11 +106,51 @@ public:
     GLuint ID;
     GLuint ElementCount;
 
+    Vec2    *Data;
     Texture *Image;
 public:
     void Bind();
     void Unbind();
 };
+
+
+
+
+class FrameBuffer
+{
+public:
+    FrameBuffer(){}
+   ~FrameBuffer();
+    FrameBuffer(Shader *shader);
+
+    Shader *FBShader;
+
+    GLuint ID;
+    GLuint TextureID;
+    GLuint TexCoordsID;
+
+    VertexBuffer  *TestQuad;
+    IndexBuffer   *TestQuadIBO;
+    ColorBuffer   *TQColor;
+
+    void Bind();
+    void Unbind();
+    void Render();
+
+    void PositionQuad(Vec3 pos);
+    void RotateQuad(Vec3 rot);
+
+
+private:
+    Vec3 Position, Rotation;
+};
+
+
+
+
+
+
+
 
 
 

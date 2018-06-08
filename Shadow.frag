@@ -20,6 +20,7 @@ varying vec4 ShadowCoord;
 
 void main()
 {	
+
 	vec4 shadowCoordinateWdivide = ShadowCoord / ShadowCoord.w ;
 	
 	// Used to lower moiré pattern and self-shadowing
@@ -34,6 +35,6 @@ void main()
  		shadow = distanceFromLight < shadowCoordinateWdivide.z ? 0.5 : 1.0 ;
   	
 	
-	gl_FragColor =	 shadow * gl_Color;
+	gl_FragColor =	 (shadow ) * gl_Color;
   
 }

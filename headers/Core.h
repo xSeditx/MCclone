@@ -35,6 +35,8 @@ public:
     Block(){}
     Block(Vec3 pos, MetaData &data);
 
+    int ID;
+
     Vec3 Position,
          Rotation;
 
@@ -44,12 +46,16 @@ public:
 
     std::vector<Vec3> VertexList;
     Vec3     Verts[24];
+
     std::vector<Vec3> NormalList;
     Vec3     Norms[24];
-    std::vector<Vec3> ColorList;
+
+    std::vector<Vec4> ColorList;
     Vec3     Color[24];
+
     std::vector<GLuint>IndexList;
     GLuint Indice[36];
+
     std::vector<Vec2> TextureCoords;
     Vec2     UV[24];
 
@@ -66,6 +72,11 @@ public:
     void Unbind();
     void Render();
     void OnUpdate();
+
+
+
+static int BlockCount;
+
 };
 
 

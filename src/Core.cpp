@@ -1,7 +1,7 @@
    
 #include"core.h"
 
-
+int Block::BlockCount = 0;
 // You are going to see a bit of a mess here as I just setup the Batcher to handle all the Vertices and have not cleaned out the Code I am not really using
 // This means you are going to see multiple forms of buffers and Arrays all carrying the same data, I just finished getting that up and running when I started playing 
 // With the buffer objects
@@ -30,7 +30,8 @@ Block::~Block()
 
 Block::Block(Vec3 pos, MetaData &blockdata)
      : Position(pos) ,  
-       VertexCount(0)
+       VertexCount(0),
+       ID(BlockCount++)
 {
 //f_TRACE(Print("Block Constructor"));
 
@@ -107,8 +108,6 @@ Block::Block(Vec3 pos, MetaData &blockdata)
 
     };
 
-
-
     GLuint Indexdata[]=
     { 
         0,1,2,    0,2,3,     // FRONT
@@ -132,16 +131,16 @@ Block::Block(Vec3 pos, MetaData &blockdata)
     
     GLfloat alpha = 0; // Fix this to work off of 24 Vertices in the future. May need it for Simulated lighting.
 
-    Vec3 A = Vec3(GL_Color(0)  ,  GL_Color(0)  ,  GL_Color(  0)),   // 0
-         B = Vec3(GL_Color(255),  GL_Color(0)  ,  GL_Color(  0)),   // 1
-         C = Vec3(GL_Color(0)  ,  GL_Color(255),  GL_Color(  0)),   // 2
-         D = Vec3(GL_Color(0)  ,  GL_Color(0)  ,  GL_Color(255)),   // 3 
-         E = Vec3(GL_Color(255),  GL_Color(255),  GL_Color(  0)),   // 5
-         F = Vec3(GL_Color(255),  GL_Color(0)  ,  GL_Color(255)),   // 6
-         G = Vec3(GL_Color(0)  ,  GL_Color(255),  GL_Color(255)),   // 8
-         H = Vec3(GL_Color(255),  GL_Color(255),  GL_Color(255));   // 11 
+    Vec4 A = Vec4(GL_Color(0)  ,  GL_Color(0)  ,  GL_Color(  0),   GL_Color(255)),   // 0
+         B = Vec4(GL_Color(255),  GL_Color(0)  ,  GL_Color(  0),   GL_Color(255)),   // 1
+         C = Vec4(GL_Color(0)  ,  GL_Color(255),  GL_Color(  0),   GL_Color(255)),   // 2
+         D = Vec4(GL_Color(0)  ,  GL_Color(0)  ,  GL_Color(255),   GL_Color(255)),   // 3 
+         E = Vec4(GL_Color(255),  GL_Color(255),  GL_Color(  0),   GL_Color(255)),   // 5
+         F = Vec4(GL_Color(255),  GL_Color(0)  ,  GL_Color(255),   GL_Color(255)),   // 6
+         G = Vec4(GL_Color(0)  ,  GL_Color(255),  GL_Color(255),   GL_Color(255)),   // 8
+         H = Vec4(GL_Color(255),  GL_Color(255),  GL_Color(255),   GL_Color(255));   // 11 
     
-     Vec3 ColorBuff[] = 
+     Vec4 ColorBuff[] = 
      {
          A,B,C,D,
          
@@ -189,9 +188,8 @@ Block::Block(Vec3 pos, MetaData &blockdata)
         IndexList.push_back(Indexdata[Index]);
     }
 
-
-  // Averages all the normals so Each Faces Vertices have normals facing straight out to prevent interpolation of the light
-   // Across the block
+// Averages all the normals so Each Faces Vertices have normals facing straight out to prevent interpolation of the light
+// Across the block
      for(int Index = 0; Index < 24 ; Index += 4)
      {
          Vec3 Norm =  NormalData[Index]   +
@@ -207,19 +205,16 @@ Block::Block(Vec3 pos, MetaData &blockdata)
          NormalData[Index+3] = Norm;
 
      }
-  
-  
-
 
    std::memcpy(Verts,          &V, sizeof(V));
    std::memcpy(&Norms, &NormalData, sizeof(NormalData));
-   std::memcpy(&Color,  &ColorBuff, sizeof(ColorBuff));
+// std::memcpy(&Color,  &ColorBuff, sizeof(ColorBuff)); // If this exist IndexList gets Corrupted EVIL STD::VECTOR EVIL I TELL YOU!!!
    std::memcpy(&UV   ,        &UVs, sizeof(UVs));
-   std::memcpy(&Indice, &Indexdata, sizeof(Indexdata));
+   std::memcpy(Indice, Indexdata, sizeof(Indexdata));
 
    Vertices = new VertexBuffer (Verts     , 24);
    Indices  = new IndexBuffer  (Indice , 36);
-   Colors   = new ColorBuffer  (Color , 24);
+   Colors   = new ColorBuffer (Color , 24);
 
    if(blockdata.Type == Dirt)   Textures = new TextureBuffer(BlockTexture , UV, 24);
    if(blockdata.Type == Stone)   Textures = new TextureBuffer(StoneTexture , UV, 24);
@@ -245,7 +240,6 @@ void Block::Unbind()
 void Block::Render()
 {
 //f_TRACE(Print("Block Render"));  // A Debug Option I designed a while ago that I can turn on and it informs me what functions are being called
-
 // Normal Render
 // Displays the Summed Normals acros a polygon. Needs a bit of work but currently need to work on my Batch Render;
 

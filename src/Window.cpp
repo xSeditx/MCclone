@@ -89,20 +89,17 @@ Window::Window(int x,int y,int w,int h,char* title)
         glShadeModel(GL_SMOOTH);
         glEnable(GL_DEPTH_TEST);
         glDepthFunc(GL_LEQUAL); 
-        glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
+       // glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
+        glEnable(GL_COLOR_MATERIAL);
 
 
+        glMatrixMode(GL_PROJECTION );
+        glLoadIdentity(); 
+        gluPerspective(30, 640.0/640.0, 1, 1000);
 
-
-
-
-        _GL(glMatrixMode(GL_PROJECTION ));
-        _GL(glLoadIdentity()); 
-        gluPerspective(30,640.0/480.0, 1, 1000);
-
-        _GL(glMatrixMode( GL_MODELVIEW ));
-        _GL(glLoadIdentity());
-        _GL(glTranslatef(0, 0, 0));
+        glMatrixMode( GL_MODELVIEW );
+        glLoadIdentity();
+        glTranslatef(0, 0, 0);
 
 
 
