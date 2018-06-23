@@ -1,61 +1,9 @@
+
 #include"Mesh.h"
 
-Mesh::Mesh(std::vector<Vertex>vertices, std::vector<GLuint> indices, std::vector<Texture>textures)
-    :Vertices(vertices),
-     Indices(indices),
-     Textures(textures)
-{
-    SetupMesh();
-}
-void Mesh::SetupMesh()
-{
-    glGenBuffers(1,&VBO);
-    glGenBuffers(1,&EBO);
 
-    glBufferData(GL_ARRAY_BUFFER, Vertices.size() * sizeof(Vertex), &Vertices[0], GL_STATIC_DRAW);
 
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, Indices.size() * sizeof(GLuint), &Indices[0], GL_STATIC_DRAW);
 
-    //Vertex Position
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0,3,GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)0);
-    //Vertex Normals
-    glEnableVertexAttribArray(1);
-    glVertexAttribPointer(1,3,GL_FLOAT,GL_FALSE, sizeof(Vertex), (void*) offsetof(Vertex,Normals));
-    // Vertex Texture Coords
-    glEnableVertexAttribArray(2);
-    glVertexAttribPointer(2,2,GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex,TexCoords));
-
-    glBindVertexArray(0);
-}
-void Mesh::Render(Shader shader)
-{
-    GLuint diffuseNR  = 1;
-    GLuint SpecularNR = 1;
-
-    for_loop(Index, Textures.size())
-    {
-      //  glActivateTexture(GL_TEXTURE0 + Index);  // HIGHER VERSIONS OF OPENGL 
-
-        std::string Number;
-        const char *Name = Textures[Index].type;
-
-        if("texture_diffuse" == Name)
-        {
-            //Number = std::to  Convert DisfuseNR++ into a string;
-        }
-        else if("texture_specular")
-        {
-            //Number = std::to  Convert SpecularNR++ into a string;
-        }
-    }
-//glActivateTexture(GL_TEXTURE0 + Index);  // HIGHER VERSIONS OF OPENGL 
-//glBindVertexArray(VAO);
-
-    glDrawElements(GL_TRIANGLES, Indices.size(), GL_UNSIGNED_INT, 0);
-    glBindVertexArray(0);
-}
 bool Mesh::LoadModel(const char* path){
     
     Print("WARNING LOAD MODEL FUNCTION NOT COMPLETE!!!!!");
@@ -122,12 +70,9 @@ bool Mesh::LoadModel(const char* path){
         normalIndices.push_back(normalIndex[0]);
         normalIndices.push_back(normalIndex[1]);
         normalIndices.push_back(normalIndex[2]);
-
- //      Vertex Temp;
- //      Temp.Position = vertexIndex[0];
- // TODO: Need to setup so that the Vertex Data is all read into a single Vertex then pushed back to te Vertex as PNT format
     }
-        
+    
+    
 // ================================================ Process the incoming Data ==================================================
      //
      //   std::vector < Vec3 > out_vertices;
@@ -140,6 +85,5 @@ bool Mesh::LoadModel(const char* path){
     
         Vec3 vertex = temp_vertices[ vertexIndex-1 ];
         out_vertices.push_back(vertex);
-        
     }
 }
