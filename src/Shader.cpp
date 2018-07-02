@@ -16,16 +16,19 @@ Shader::Shader(const char* vertpath,const char* fragpath)
 {
     m_ShaderID = Load();
 }
-Shader::~Shader()
+
+// Merge the two after ALL debugging is handled
+Shader::~Shader(){}
+void Shader::Delete()
 {
     glDeleteProgram(m_ShaderID);
 }
 
 GLuint Shader::Load()
 {
-        GLuint program  = glCreateProgram();
-        GLuint vertex   = glCreateShader(GL_VERTEX_SHADER);
-        GLuint fragment = glCreateShader(GL_FRAGMENT_SHADER);
+        GLuint program  = glCreateProgramObjectARB();
+        GLuint vertex   = glCreateShaderObjectARB(GL_VERTEX_SHADER);
+        GLuint fragment = glCreateShaderObjectARB(GL_FRAGMENT_SHADER);
         
         std::string vertSourceString = FileUtils::read_file(m_Vertpath);
         std::string fragSourceString = FileUtils::read_file(m_Fragpath);
@@ -33,8 +36,8 @@ GLuint Shader::Load()
         const char* vertSource = vertSourceString.c_str();
         const char* fragSource = fragSourceString.c_str();
         
-        glShaderSource(vertex, 1, &vertSource,NULL);
-        glCompileShader(vertex);
+        glShaderSourceARB(vertex, 1, &vertSource,NULL);
+        glCompileShaderARB(vertex);
         
         GLint result;
         glGetShaderiv(vertex,GL_COMPILE_STATUS, &result);
@@ -43,19 +46,18 @@ GLuint Shader::Load()
         {
                 GLint length;
                 glGetShaderiv(vertex,GL_INFO_LOG_LENGTH,&length);
-                std::vector<char> error(length);
+                    std::vector<char> error(length);
                 glGetShaderInfoLog(vertex, length, &length, &error[0]);
-                std::cout << "Failed to compile VertexShader: " << &error[0] << std::endl;
+                    std::cout << "Failed to compile VertexShader: " << &error[0] << std::endl;
                 glDeleteShader(vertex);
         return 0;
         }
-        
-        glShaderSource(fragment, 1, &fragSource, NULL);
-        glCompileShader(fragment);
-        glGetShaderiv(fragment,GL_COMPILE_STATUS, &result);
-        
-        
-        if(result== GL_FALSE)
+      
+        glShaderSourceARB(fragment, 1, &fragSource, NULL);
+        glCompileShaderARB(fragment);
+        glGetShaderiv(fragment, GL_COMPILE_STATUS, &result);
+
+        if(result == GL_FALSE)
         {
                 GLint length;
                 glGetShaderiv(fragment, GL_INFO_LOG_LENGTH, &length);
@@ -65,14 +67,42 @@ GLuint Shader::Load()
                 glDeleteShader(fragment);
         return 0;
         }
-                
+//
+//glBindAttribLocation(program, 0, "position"); // The index passed into glBindAttribLocation is
+//glBindAttribLocation(program, 1, "normal");              
+//glBindAttribLocation(program, 2, "texcoord"); // used by glEnableVertexAttribArray. "position"   
+
+        glAttachObjectARB(program,vertex);
+        glAttachObjectARB(program,fragment);      
+        //glAttachShader(program,vertex);
+        //glAttachShader(program,fragment);
+
+        _GL(glLinkProgramARB(program));
+
+        glGetShaderiv(program,GL_LINK_STATUS, &result);
         
-        glAttachShader(program,vertex);
-        glAttachShader(program,fragment);
+        if(result== GL_FALSE)
+        {
+                GLint length;
+                glGetShaderiv(program,GL_INFO_LOG_LENGTH,&length);
+                    std::vector<char> error(length);
+                glGetShaderInfoLog(program, length, &length, &error[0]);
+                    std::cout << "Link Fail " << &error[0] << std::endl;
+                glDeleteShader(program);
+        return 0;
+        }
         
-        glLinkProgram(program);
-        glValidateProgram(program);
+       
+      //  glLinkProgram(program);
         
+        glValidateProgramARB(program);
+
+
+       int param;
+            glGetProgramiv(program, GL_ATTACHED_SHADERS, &param);
+            Print(param);
+            glDetachShader(program, vertex);
+            glDetachShader(program, fragment);
         glDeleteShader(vertex);
         glDeleteShader(fragment);
 return program;
@@ -120,6 +150,10 @@ GLint Shader::GetUniformLocation(GLchar *name)
 {
     return glGetUniformLocation(m_ShaderID, name);
 }
+
+
+
+
 //======================================================================================================================================================================================
 //          TEST DATA FOR SHADERS PRIMATIVES ETC...........ETC                                                                                                                                                                   
 //======================================================================================================================================================================================

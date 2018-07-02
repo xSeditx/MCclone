@@ -26,7 +26,7 @@ Window::Window(int x,int y,int w,int h,char* title)
         WIDTH(w), 
         HEIGHT(h), 
         TITLE(title),
-        TIMER(0),
+        TIMER( std::clock()),
         FRAME_COUNT(0),
         FPS(0),
         SyncRATE(0)
@@ -38,7 +38,7 @@ Window::Window(int x,int y,int w,int h,char* title)
 
 //------------------------------------------------------- GLFW Window Hints	--------------------------------------------------------------------------------------------  
         glfwWindowHint(GLFW_SAMPLES              ,    4); // 4x antialiasing
-       // glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR,    3.0); // Min and Max supported OpenGL versions
+       // glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR,    2.6); // Min and Max supported OpenGL versions
         glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR,    0);
         glfwWindowHint(GLFW_RESIZABLE            , true);
 //----------------------------------------------------------------------------------------------------------------------------------------------------------------------	    
@@ -91,22 +91,17 @@ Window::Window(int x,int y,int w,int h,char* title)
         glDepthFunc(GL_LEQUAL); 
        // glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
         glEnable(GL_COLOR_MATERIAL);
+        glColorMaterial (GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE ) ;
 
-
-        glMatrixMode(GL_PROJECTION );
+        glMatrixMode(GL_PROJECTION);
         glLoadIdentity(); 
-        gluPerspective(30, 640.0/640.0, 1, 1000);
+        gluPerspective(30, 640.0 / 480.0, 1, 1000);
 
-        glMatrixMode( GL_MODELVIEW );
+        glMatrixMode(GL_MODELVIEW);
         glLoadIdentity();
         glTranslatef(0, 0, 0);
 
-
-
-
-
-
- //-------------------------------------------------------------------------------------------      
+//-------------------------------------------------------------------------------------------      
 }
 
 //______________________________________________________________________________________________________________________________________________________________________
@@ -119,7 +114,7 @@ void Window::Error_callback        (int error, const char* description)
         fprintf(stderr, "Error: %s\n", description);
 }
 void Window::Resize_Callback       (GLFWwindow *HAND,int w,int h){
-f_TRACE(Print("Resize Callback"));
+//f_TRACE(Print("Resize Callback"));
 
         SCREEN->HEIGHT = h;
         SCREEN->WIDTH  = w;
@@ -133,8 +128,8 @@ void Window::Window_close_callback (GLFWwindow* window)
 
 void Window::KeyBoard_Callback     (GLFWwindow *window, int key, int scancode, int action, int mods) 
 { 
-f_TRACE(Print("Keyboard Callback"));
-//GLFW_PRESS, GLFW_RELEASE or GLFW_REPEAT.       
+//f_TRACE(Print("Keyboard Callback"));
+//   GLFW_PRESS, GLFW_RELEASE or GLFW_REPEAT.       
         SCREEN->KEY_BOARD.Key = key;
         SCREEN->KEY_BOARD.Action = action;
         SCREEN->KEY_BOARD.Scancode = scancode;  
@@ -144,14 +139,13 @@ f_TRACE(Print("Keyboard Callback"));
 
 void Window::Mouse_Callback        (GLFWwindow *window, int button, int action, int mod)
 {
- // TODO: ADD THESE MIDDLE MOUSE AND WHEEL CALLBACKS
 
+// TODO: ADD THESE MIDDLE MOUSE AND WHEEL CALLBACKS
 // void (*CallBackOnMButtonDown)          (int mX, int mY);  
 // void (*CallBackOnMButtonUp   )         (int mX, int mY);
     
     SCREEN->MOUSE.Action = action;
     SCREEN->MOUSE.Button[button] = action != GLFW_RELEASE;
-
 
     if(action == GLFW_PRESS)
     {
@@ -297,59 +291,66 @@ Vec2 Window::GET_WINDOW_POSITION(){
 //if (SCREEN->Callbacks.CallBackOnMouseMove != nullptr)SCREEN->Callbacks.CallBackOnMouseMove(SCREEN->MOUSE.X, SCREEN->MOUSE.Y, 0, 0, SCREEN->MOUSE.Button[0], SCREEN->MOUSE.Button[1],SCREEN->MOUSE.Button[2]);
 
 /*~~~~~~~~~~~~~~~~~~Get Frames Per Second~~~~~~~~~~~~~~~~~~~~*/
-   
-        if((glfwGetTime() - SCREEN->TIMER) >= 1)
-            {
-                        SCREEN->FPS = SCREEN->FRAME_COUNT;
-                        SCREEN->FRAME_COUNT = 0;
-            }
-            SCREEN->TIMER = glfwGetTime();
-            SCREEN->FRAME_COUNT++;
+             //CPU "ticks" since the program started.
+    //clock_t programTickCount = std::clock();
+ 
+    //Convert from ticks to seconds.
+           float time = (float)std::clock();//float(programTickCount) / CLOCKS_PER_SEC;
+        ///  Print( std::clock());
+           if(time - SCREEN->TIMER >= 1000)
+           {
+                       SCREEN->FPS = SCREEN->FRAME_COUNT;
+                       SCREEN->FRAME_COUNT = 0;
+                      SCREEN->TIMER  = time;//glfwGetTime();
+           }
+           SCREEN->FRAME_COUNT++;
 /*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/		
-            glfwPollEvents();
+  //          glfwPollEvents();
             int W,H;
-            glfwGetFramebufferSize(SCREEN->glCONTEXT,&W,&H); //<---------- The pollevents here and in the GAME_LOOP function should be reviewed because even though its working I dont believe its being done correctly;
-            glfwSwapBuffers(SCREEN->glCONTEXT);
+            _GL(glfwGetFramebufferSize(SCREEN->glCONTEXT,&W,&H)); //<---------- The pollevents here and in the GAME_LOOP function should be reviewed because even though its working I dont believe its being done correctly;
+          glfwSwapBuffers(SCREEN->glCONTEXT);
 
-    }
+  }
 
 //======================================================================================================================================================================
 //____________________________________________________________  Clear the back buffers  ________________________________________________________________________________
-    inline void CLS(){
-        glClearColor(0,0,GL_Color(255),1);
+inline void CLS()
+{
+    glClearColor(0,0,GL_Color(255),1);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
+}
+inline void CLS(unsigned long color)
+{
+    int R =  color % 255,
+        G = (color / 256)   % 256,
+        B = (color / 65536) % 256;
+        glClearColor(R,G,B,1);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-    }
-    inline void CLS(unsigned long color){
-        int R =  color % 255,
-            G = (color / 256)   % 256,
-            B = (color / 65536) % 256;
-            glClearColor(R,G,B,1);
-            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    }
+}
 
 //======================================================================================================================================================================
 //______________________________________________________  EVENT HANDLER AND MESSAGE DISPATCHER  ________________________________________________________________________
-bool GAME_LOOP(){          
-
-            glfwPollEvents();
-            if (glfwWindowShouldClose(SCREEN->glCONTEXT))return false;
-
+bool GAME_LOOP()
+{          
+           glfwPollEvents();
+           if (glfwWindowShouldClose(SCREEN->glCONTEXT))return false;
      return true;
 }                               
             
 //======================================================================================================================================================================
 //__________________________________________________________ CLIPBOARD GETTERS AND SETTERS _____________________________________________________________________________
-const char *GET_CLIPBOARD(){        /*clipboard Getter*/          
+const char *GET_CLIPBOARD()  /*clipboard Getter*/          
+{       
             Print("TEST GET CLIPBOARD FUNCTION");
             const char* text = glfwGetClipboardString(SCREEN->glCONTEXT);
             if(text) return text; else 
         return NULL;
-    } 
-void  SET_CLIPBOARD  (char *text){  /*clipboard setter*/
+} 
+void  SET_CLIPBOARD(char *text)  /*clipboard setter*/
+{ 
 		Print("TEST SET CLIPBOARD FUNCTION");
 			glfwSetClipboardString(SCREEN->glCONTEXT,text);
-	}
+}
 
 //======================================================================================================================================================================
 //__________________________________________________________ Get Buffer Offser Pointer _________________________________________________________________________________
@@ -357,7 +358,6 @@ inline GLvoid* BufferObjectPtr( unsigned int idx )
 {
     return (GLvoid*)( ((char*)NULL) + idx );
 }
-
 // http://ptgmedia.pearsoncmg.com/images/chap2_0321336798/elementLinks/02fig03.gif // Date of link: 1/ 27/ 2018
 
 //=================================================================================================================================================================== */
@@ -415,12 +415,40 @@ void *GetAnyGLFuncAddress(const char *name)
   return p;
 }
 
+float Squared(float x)
+{
+    return x * x;
+}
 
+#include <gtc/type_ptr.hpp>
 
+////From float* to vec3:
+//
+//float data[] = { 1, 2, 3 };
+//glm::vec3 vec = glm::make_vec3(data);
+////From vec3 to float*:
+//
+//glm::vec3 vec(1, 2, 3);
+//
+//Matrix a;
+//float* data = glm::value_ptr(a);
+////In both cases, do not forget to 
+//
+//
 
-
-
- float Squared(float x)
- {
-     return x * x;
- }
+//
+//float *Mat2Float(Matrix mat)
+//{
+//    return  reinterpret_cast<float*>(mat[0][0]);
+//}
+//
+//Matrix* Float2Mat(float arr[16])
+//{
+//    return  reinterpret_cast<Matrix*>(arr);
+//}
+//
+//
+//     float arr[] = { 1.f, 0.f, 0.f };
+//    Vec3 *v = reinterpret_cast<Vec3*>(arr);
+//
+//
