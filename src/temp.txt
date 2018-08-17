@@ -1,3 +1,68 @@
+class Cam
+{
+public:
+    Cam(){}
+    Cam(Vec3 position, Vec3 Rotation)
+    { 
+        FOV = 45.0;
+        AspectRatio = 640.0f / 480.0f;
+        Near = .1f;
+        Far  = 1000.0f;
+
+        Forward =  Vec3(0.0f, 0.0f, 1.0f);
+        Up      =  Vec3(0.0f, 1.0f, 0.0f);
+
+        Perspective = glm::perspective(FOV,  AspectRatio, Near, Far);
+        View = GetViewProjection();
+    }
+
+    float  FOV, 
+           AspectRatio, 
+           Near,
+           Far;
+
+    Vec3 Position;
+    Vec3 Forward;
+    Vec3 Up;
+
+    Matrix Perspective;
+    Matrix View;
+
+    void Update()
+    {
+        View = GetViewProjection();
+    }
+    Matrix GetViewProjection()
+    {
+        View = glm::lookAt(Position, Position + Forward, Up);
+        return View;
+    }
+    
+
+
+    void Move(float speed)
+    {
+        Forward  = Vec3( 0.0f, 0.0f, -1.0f);
+     //   Forward  = glm::normalize(Forward); // Not Sure if This Is Currently Needed
+        Position += speed * Forward;
+        View = glm::translate(glm::mat4(1.0f),Position);
+    }
+    void Strife(float speed)
+    {
+        Position += glm::normalize(glm::cross(Forward,Up)) * speed;
+    }
+};
+
+
+
+// OLDER STUFF.... More Half Assed. Its halfway in between transition between using Linear and Matrix //Math. I have since started to try to use the above as I want the Camera to be part of the Window //itself instead of its own thing.
+
+
+
+
+
+
+
 //                                                                                                                          
 //                          OPENGL 2.0 Abstraction API
 //                               January 24 2018
@@ -9,10 +74,6 @@
 
 
 
-// SHADER = 
-// gl_Position = MVP * gl_Vertex;
-
-
 
 #include "Camera.h"
 #include "Window.h"
@@ -20,14 +81,6 @@
 #include "gtc/matrix_transform.hpp"
 
 //(30, 640.0 / 480.0, 1, 1000);
-// STRUCTURE OF THE TRANSFORM MATRIX
-//    Xxaxis Yxaxis, Zxaxis, Positionx
-//    Xyaxis Yyaxis, Zyaxis, Positiony
-//    Xzaxis Yzaxis, Zzaxis, Positionz
-//    0,    0,     0,     1
-//    
-
-
 
 Camera::Camera()
       :
@@ -265,211 +318,3 @@ void Camera::MouseMove(int dx, int dy)
     UpdateView();
 }
 
-
-
-
-//Matrix Camera::MakeView(Vec3& eye, Vec3& target, Vec3& upDir)
-//{
-//
-//    GLfloat tilt = 0.0f;
-//    GLfloat  bearing =  0.0f;
-//    
-//    glm::vec3 upVector = glm::vec3(0, 1, 0);
-//    
-//    Transform = glm::rotate(glm::mat4(),bearing, upVector); // rotate around to a given bearing: yaw
-//    glm::vec3 pitchVector = glm::vec3(1, 0, 0); // Define the 'look up' axis, should be orthogonal to the up axis
-//    
-//    Transform = glm::rotate(Transform, tilt, pitchVector); // rotate around to the required head tilt: pitch
-//    ViewMatrix = glm::inverse(Transform);    // now get the view matrix by taking the camera inverse
-//    
-//    return ViewMatrix;
-//}
-//
-
-
-
-//  glm::mat4 CameraMatrix = glm::lookAt(
-//  glm::vec3(cameraPosition.X,cameraPosition.Y,cameraPosition.Z), // camera, in world space
-//  glm::vec3(cameraTarget.X,cameraTarget.Y,cameraTarget.Z),   // direction vector eye + Dir
-//  glm::vec3(upVector.X,upVector.Y,upVector.Z) 
-//  );
-//  
-//   RightX      RightY      RightZ      0
-//   UpX         UpY         UpZ         0
-//   LookX       LookY       LookZ       0
-//   PosX        PosY        PosZ        1
-//   
-//   0           1           2           3
-//   4           5           6           7
-//   8           9           10          11
-//   12          13          14          15
-//   
-//  float m[16] = {0,4,8,12,1,5,9,13,2,6,10,14,3,7,11,15};
-
-//  | ux vx -nx -eyex |  VIEW_MATRIX
-//  | uy vy -ny -eyey |
-//  | uz vz -nz -eyez |
-//  | 0  0    0     1 |
-
-
-//Vec3 forward = eye - target;//// compute the forward vector from target to eye
-//forward = glm::normalize(forward);      // make unit length
- 
-
-//Vec3 left = glm::cross(upDir, forward); // //// compute the left vector
-//left = glm::normalize(left);
-
-//Vec3 up = glm::cross(forward, left);  //// recompute the orthonormal up vector
-
-
-//Matrix matrix;
-//matrix =  glm::mat4(1.0);
-//
-///    // set rotation part, inverse rotation matrix: M^-1 = M^T for Euclidean transform
-///    matrix[0][0] = left.x;
-///    matrix[4] = left.y;
-///    matrix[8] = left.z;
-///    matrix[1] = up.x;
-///    matrix[5] = up.y;
-///    matrix[9] = up.z;
-///    matrix[2] = forward.x;
-///    matrix[6] = forward.y;
-///    matrix[10]= forward.z;
-///
-///    // set translation part
-///    matrix[12]= -left.x * eye.x - left.y * eye.y - left.z * eye.z;
-///    matrix[13]= -up.x * eye.x - up.y * eye.y - up.z * eye.z;
-///    matrix[14]= -forward.x * eye.x - forward.y * eye.y - forward.z * eye.z;
-///
-///    return matrix;
-
-
-
-//void Camera::Setup()
-//{
-//    Projection = glm::project(Vec3(0,0,0),Matrix(1.0f), Matrix(1.0f),  Vec4(0.0f,ScreenDimensions.x,0.0f, ScreenDimensions.y));//  0.0f, ScreenDimensions.x, 0.0f, ScreenDimensions.y, -1.0f, 1.0f);
-//    glm::mat4 View = glm::mat4(1);
-//    glm::mat4 Scale = glm::scale(glm::mat4(1), glm::vec3(Scale));
-//    glm::mat4 Translate = glm::translate(glm::mat4(1), glm::vec3(-Position.x*Scale + ScreenDimensions.x / 2, -Position.y*Scale + ScreenDimensions.y / 2, 0)); 
-//    glm::mat4 Model =  Translate * Scale;
-//
-//    Transform = Projection * View * Model;
-//}
-
-//Matrix Camera::Orthographic(float Left,float Right,float Top,float Bottom,float Near, float Far)
-//{
-//    Matrix result(1.0f);
-//    
-//    result[0][0] = 2.0f/ (Right - Left);
-//    result[1][1] = 2.0f/ (Top - Bottom);
-//    result[2][2] = 2.0f/ (Near - Far);
-//    
-//    result[0][3] = 1;//(Left + Right) / (Left - Right);
-//    result[1][3] = (Bottom - Top) / (Bottom - Top);
-//    result[2][3] = (Far - Near) / (Far - Near);
-//    
-//    return result;
-//}
-
-
-
-//// Matrix Camera::Perspective(float FOV,float Aspect_Ratio,float Near,float Far)
-// {
-// 	Matrix result(1.0f);
-// 
-// 	float q = 1.0f / (float)tan((.5 * (3.14159 / 180.0f))*FOV);
-// 	float a = q / Aspect_Ratio;
-// 
-// 	float b = (Near + Far) / (Near - Far);
-// 	float c = (2.0f * Near * Far) / (Near - Far);
-// 
-// 	result.elements[0 + 0 * 4] = a;
-// 	result.elements[1 + 1 * 4] = q;
-// 	result.elements[2 + 2 * 4] = b;
-// 
-// 	result.elements[3 + 2 * 4] = -1.0f;
-//     result.elements[2 + 3 * 4] = c;
-// 
-// 	return result;
-// }	   
-
-
-// Matrix Camera::Rotation(float Angle,const Vec3& Axis)
-// {
-// 	Matrix result(1.0f);
-// 
-// 	float r = (float)(Angle  * (3.14159 / 180.0f));
-// 	float c = cos(r);
-// 	float s = sin(r);
-// 	float omc = 1.0f - c;
-// 
-// 	float x = Axis.x;
-// 	float y = Axis.y;
-// 	float z = Axis.z;
-// 
-// 	result.elements[0 + 0 * 4] = x  * omc + c;
-// 	result.elements[1 + 0 * 4] = y * x * omc + z * s;
-// 	result.elements[2 + 0 * 4] = x * z * omc - y * s; 	
-// 
-// 	result.elements[0 + 1 * 4] = x * y * omc - z * s;
-// 	result.elements[1 + 1 * 4] = y * omc + c;
-// 	result.elements[2 + 1 * 4] = y * z * omc + x * s;
-// 
-// 	result.elements[0 + 2 * 4] = x * z * omc + y * s;
-// 	result.elements[1 + 2 * 4] = y * z * omc + x * s;
-// 	result.elements[2 + 2 * 4] = z * omc + c; 
-// 
-// 	return result;
-// }
-
-
-
-// Matrix Camera::Translation(const Vec3& Translation)
-// {
-// 	Matrix result(1.0f);
-// 
-// 	result.elements[0 + 3 * 4] = Translation.x;
-// 	result.elements[1 + 3 * 4] = Translation.y;
-// 	result.elements[2 + 3 * 4] = Translation.z;
-// 
-// 	return result;
-// }
-// Matrix Camera::Scale(const Vec3& Scale)
-// {
-// 	Matrix result(1.0f);
-// 
-// 	result.elements[0 + 0 * 4] = Scale.x;
-// 	result.elements[1 + 1 * 4] = Scale.y;
-// 	result.elements[2 + 2 * 4] = Scale.z;
-// 
-// 	return result;
-// 
-// }
-
-
-//float Inv[] = {
-//    1.0f, 0.0f ,0.0f ,-1.0f,
-//    0.0f, 1.0f ,0.0f ,-1.0f,
-//    0.0f, 0.0f ,1.0f ,-1.0f,
-//    0.0f, 0.0f ,0.0f , 1.0f
-//};                
-
-//glm::mat4 InversionMatrix = Array_to_Mat4(Inv);
-
-
-
-
-// 
-// 
-// 
-// glm::mat4 ViewMatrix(glm::vec3 Position, glm::vec3 Rotation)
-// {
-//     glm::mat4 Temp;
-//     Temp = glm::rotate(Temp, glm::radians(Rotation.x), { 1, 0, 0 });
-//     Temp = glm::rotate(Temp, glm::radians(Rotation.y), { 0, 1, 0 });
-//     Temp = glm::rotate(Temp, glm::radians(Rotation.z), { 0, 0, 1 });
-// 
-//     Temp = glm::translate(Temp, glm::vec3(-Position.x, -Position.y, -Position.z));
-// 
-//     return Temp;
-// }

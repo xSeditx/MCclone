@@ -59,7 +59,7 @@ LightSource::LightSource(Shader &shader, Vec4 pos, RGBf alight, RGBf dlight, RGB
 ShadowMap::ShadowMap(Shader &shader, unsigned int width, unsigned int height)
     :Width(width), Height(height)
 {
-    FBuffer = new FrameBuffer(&shader, 640,480);
+    FBuffer = new FrameBuffer(shader, 640, 480);
   //  glGenTextures(1, &Map);
   //  glBindTexture(GL_TEXTURE_2D, Map);
   //      glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT16, Width, Height, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);

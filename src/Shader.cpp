@@ -7,6 +7,12 @@
 //======================================================================================================================================================================================
 //                                         SHADER CLASS                                                                                                                                                   
 //======================================================================================================================================================================================
+
+
+
+
+
+
 Shader::Shader()
 {
     Print("Default Shader Constructor Called");
@@ -108,11 +114,37 @@ GLuint Shader::Load()
 return program;
 }
 
-void Shader::Enable() const
+void Shader::Enable() 
 {
     glUseProgram(m_ShaderID);
+
+    for(auto &Uni: Uniforms)
+    {
+        switch(Uni.Type)
+        {
+
+            case(Float):
+                SetUniform1f(Uni.Name, *(float*)Uni.Value);
+            break;
+            case(Integer):
+                SetUniform1Int(Uni.Name, *(int*)Uni.Value);
+            break;
+            case(Vector2):
+                SetUniform2f(Uni.Name, *(Vec2*)Uni.Value);
+            break;
+            case(Vector3):
+                SetUniform3f(Uni.Name, *(Vec3*)Uni.Value);
+            break;
+            case(Vector4):
+                SetUniform4f(Uni.Name, *(Vec4*)Uni.Value);
+            break;
+            case(Matrix4):
+                SetUniformMat4(Uni.Name, *(Matrix*)Uni.Value);
+            break;
+        }
+    }
 }
-void Shader::Disable() const
+void Shader::Disable() 
 {
     glUseProgram(0);
 }
@@ -143,15 +175,17 @@ void Shader::SetUniformMat4(GLchar *name,  Matrix &matrix)
 {
 //TODO: Find out what GLM equivalent to my elements in my Matrix class is.
 
-//glUniformMatrix4fv(GetUniformLocation(name), 1, GL_FALSE, matrix.elements);
+     glUniformMatrix4fv(GetUniformLocation(name), 1, GL_FALSE, glm::value_ptr(matrix));
 }
-
 GLint Shader::GetUniformLocation(GLchar *name)
 {
     return glGetUniformLocation(m_ShaderID, name);
 }
 
-
+void Shader::AttachUniform(GLchar *name, Uniformtype type, void *variable)
+{
+    Uniforms.push_back(Uniform(type, name, variable));
+}
 
 
 //======================================================================================================================================================================================

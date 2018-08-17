@@ -14,8 +14,6 @@
 
 #define BUFFER_OFFSET(i)   ((char *)NULL + (i))
 
-
-
 #define MAX_OBJECTS    10000
 
 
@@ -43,6 +41,14 @@ class VertexBuffer{
 
         void Bind();
         void Unbind();
+
+        void Lock(GLenum access);
+        void Unlock();
+
+        GLfloat *Read();
+        void Write(GLuint pos, GLfloat data);
+
+        void Rebuild();
 };  
 
 
@@ -101,14 +107,15 @@ class TextureBuffer
 public:
     TextureBuffer();
    ~TextureBuffer();
-    TextureBuffer(Texture *img, Vec2 *UVdata, GLsizei count);
+    TextureBuffer(Texture &img, Vec2 *UVdata, GLsizei count);
 
     GLuint ID;
     GLuint ElementCount;
 
     Vec2    *Data;
-    Texture *Image;
+    Texture Image;
 public:
+
     void Bind();
     void Unbind();
 };
@@ -116,22 +123,21 @@ public:
 
 
 
-class FrameBuffer
+
+
+class RenderBuffer
 {
 public:
-    FrameBuffer(){}
-   ~FrameBuffer();
-    FrameBuffer(Shader *shader);
+    RenderBuffer(){}
+   ~RenderBuffer();
+    RenderBuffer(Shader &shader, GLuint Width, GLuint Height);
+    RenderBuffer(Shader &shader ); // FUTURE AFTER RB CLASS IS FINISHED
 
-    Shader *FBShader;
+    Shader RBShader;
 
     GLuint ID;
-    GLuint TextureID;
-    GLuint TexCoordsID;
 
-    VertexBuffer  *TestQuad;
-    IndexBuffer   *TestQuadIBO;
-    ColorBuffer   *TQColor;
+    GLuint TexCoordsID;
 
     void Bind();
     void Unbind();
@@ -140,8 +146,15 @@ public:
     void PositionQuad(Vec3 pos);
     void RotateQuad(Vec3 rot);
 
-
 private:
+    void MakeTestQuad();
+
+    GLsizei Width,Height;
+    GLsizei WindowWidth,WindowHeight;
+
+    VertexBuffer  *TestQuad;
+    IndexBuffer   *TestQuadIBO;
+
     Vec3 Position, Rotation;
 };
 
@@ -154,57 +167,45 @@ private:
 
 
 
-
-
-
-
-
-
- 
-class Renderable3D
+class FrameBuffer
 {
-    Renderable3D();
-   ~Renderable3D();
+public:
+//    FrameBuffer(){}
+   ~FrameBuffer();
+    FrameBuffer(Shader &shader, GLuint Width, GLuint Height);
+    FrameBuffer(Shader &shader, RenderBuffer rendernb); // FUTURE AFTER RB CLASS IS FINISHED
 
 
-    VertexBuffer   *Vertices;
-    TextureBuffer  *Textures;
-    ColorBuffer    *Colors;
-    NormalBuffer   *Normals;
-    IndexBuffer    *Indices;
+    Shader FBShader;
 
+    GLuint ID;
 
-    Shader ShaderProgram;
+    Texture ColorTexture;
+    Texture DepthTexture;
+
+    void Bind();
+    void Unbind();
+    void Render();
+
+    void PositionQuad(Vec3 pos);
+    void RotateQuad(Vec3 rot);
+
+    void AttachRenderBuffer(RenderBuffer *rbuffer);
+    void AttachTextureBuffer(Texture *texture);
+private:
+    void MakeTestQuad();
+
+    GLsizei Width,Height;
+    GLsizei WindowWidth,WindowHeight;
+
+    VertexBuffer  *TestQuad;
+    IndexBuffer   *TestQuadIBO;
+
+    GLuint TexCoordsID;
+    Vec3 Position, Rotation;
+
+    GLubyte DrawBufferCount;
 };
-
-
-
-
-
-
-
-
-
-class Renderer{
-public: 
-     
-     void Submit();
-     void Flush_Renderer();
-
-   private:
-       vector<mat4> Transformation_Stack;
-
-       void Push(mat4 Mat4);
-       mat4 Pop();
-};
-
- 
-
-
-
-
-
-
 
 
 
@@ -212,137 +213,50 @@ public:
 // Into a single Buffer for their type, Bind each buffer than call  Draw Instances
 
 
-
-//
 //1.	Uniform Buffer Objects
 //2.	Texture Buffer Objects
 //3.	Instanced_arrays_ARB
-//
-//
-//
-/*
 
 //=============================================================================================================================================
 //_______________________________________________________________________________________________________________________________________________________________
 
+//1. pbuffer extension initialization
+//2. pbuffer creation
+//3. pbuffer binding
+//4. pbuffer destruction. 
 
-
-//=============================================================================================================================================
-//________________TEST STRUCTURES TO HANDLE THE VAO Issues___________________________________________________________________________________________________________________________
-
-struct VertexFormat
+class PBuffer
 {
-  bool enabled;
-  int attribute_index;
-  float data_type; //Is f32, f64, or int32.
-  int num_components;
-  bool normalized;
-  GLenum type;
-  int binding;    //The `bindings` index this attribute gets its data from.
-  int *offset;
+    PBuffer(){}
+    ~PBuffer(){}
+    PBuffer( GLuint width, GLuint height);
+
+
+
+      GLuint width;
+      GLuint height;
 };
 
-struct VertexBufferBinding// Mesh
+
+
+class VAOBuffer
 {
-  Buffer buffer;// VBO
-  int  *offset; // Number of Vertices 
-  int  *stride;
-  int instancing;
-};
-
-struct VertexArrayObject
-{
-  VertexFormat formats[16];
-  VertexBufferBinding bindings[16];
-};
-
-
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-
-
-
-
-// Renderable2d = BatchSprite
-class Renderable2D{
 public:
-    Renderable2D::Renderable2D();
-    Renderable2D::~Renderable2D();
+        VAOBuffer();
+       ~VAOBuffer(){}
 
-    Vec3 Position;
-    Vec2 Size;
-    Vec4 Color;
-    vector<VertexData> VertexArray;
-    IndexBuffer *IBO;
-    GLuint VBO;
+       VertexBuffer    *Vertices;
+       IndexBuffer     *Indices;
+       NormalBuffer    *Normals;
+       TextureBuffer   *Textures;
+       ColorBuffer     *Colors;
 
-    unsigned int IndexCount;
-    Shader &SHADER;
+       void Attach(VertexBuffer  *vertices);
+       void Attach(IndexBuffer   *indices);
+       void Attach(NormalBuffer  *normals);
+       void Attach(TextureBuffer *textures);
+       void Attach(ColorBuffer   *color);
 
-
+       void Bind();
+       void Unbind();
 };
-
-
-
-class Renderer2D{
-public:
-    virtual void submit(const Renderable2D *renderable);
-    virtual void flush();
-};
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#define RENDERER_MAX_SPRITES 10000
-#define RENDERER_VERTEX_SIZE   sizeof(VertexData)
-#define RENDERER_SPRITE_SIZE RENDERER_VERTEX_SIZE * 4
-#define RENDERER_BUFFER_SIZE RENDERER_SPRITE_SIZE * RENDERER_MAX_SPRITES
-#define RENDERER_INDICES_SIZE RENDERER_MAX_SPRITES * 6
-struct VertexData{
-    Vec3 Vertex;
-    Vec3 Color;
-}; // 28 Bytes Currently
- 
-
-
-class BatchRender2D: public Renderer2D{
-private:
-    //VertexArray VAO;
-    IndexBuffer IBO;
-    GLsizei IndexCount;
-    GLuint VBO;
-public:
-    void submit(const Renderable2D *BatchSprite) override;
-    void flush() override;
-
-};
-
-
-
-
-BatchSprite::BatchSprite(){}
-
-BatchSprite::~BatchSprite(){
-    delete(IBO);
-}
-
-
-
-
-void BatchSprite::Init(){
-    
-}
-*/

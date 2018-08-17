@@ -69,10 +69,10 @@ Window::Window(int x,int y,int w,int h,char* title)
         MOUSE.MouseMoveY = 0;
         MOUSE.Action     = 0;
 
-       KEY_BOARD.Key = 0;
-       KEY_BOARD.Scancode = 0;  
-       KEY_BOARD.Action = 0;
-       KEY_BOARD.Modifications = 0;
+        KEY_BOARD.Key = 0;
+        KEY_BOARD.Scancode = 0;  
+        KEY_BOARD.Action = 0;
+        KEY_BOARD.Modifications = 0;
         for(int count = 0; count < 350;count++)SCREEN->KEY_BOARD.KEY_STATES[count] = 0;	// NULLIFY the KEYBOARD ARRAY
  
         Set_Window_Focus(this);
@@ -85,17 +85,19 @@ Window::Window(int x,int y,int w,int h,char* title)
         }
 
 
+
+
 // --------------- Initialize Matrices ----------------------------------------------------
         glShadeModel(GL_SMOOTH);
         glEnable(GL_DEPTH_TEST);
         glDepthFunc(GL_LEQUAL); 
-       // glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
+        glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
         glEnable(GL_COLOR_MATERIAL);
         glColorMaterial (GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE ) ;
 
         glMatrixMode(GL_PROJECTION);
         glLoadIdentity(); 
-        gluPerspective(30, 640.0 / 480.0, 1, 1000);
+        gluPerspective(45, 640.0 / 480.0, .1, 1000);
 
         glMatrixMode(GL_MODELVIEW);
         glLoadIdentity();
@@ -415,10 +417,6 @@ void *GetAnyGLFuncAddress(const char *name)
   return p;
 }
 
-float Squared(float x)
-{
-    return x * x;
-}
 
 #include <gtc/type_ptr.hpp>
 
@@ -452,3 +450,37 @@ float Squared(float x)
 //    Vec3 *v = reinterpret_cast<Vec3*>(arr);
 //
 //
+
+
+float Min(float p1, float p2)
+{
+    if(p1 > p2)
+    { 
+        return p2;
+    }
+    else
+    { 
+        return p1;
+    }
+}
+float Max(float p1, float p2)
+{
+    if(p1 > p2)
+    { 
+        return p1;
+    }
+    else
+    { 
+        return p2;
+    }
+}
+float Squared(float x)
+{
+    return x * x;
+}
+float GetDistance(Vec3 p1, Vec3 p2)
+{
+    return sqrt(Squared(p1.x - p2.x) + 
+                Squared(p1.y - p2.y) + 
+                Squared(p1.z - p2.x));
+}

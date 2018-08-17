@@ -50,7 +50,6 @@ void VertexBuffer::Unlock()
 {
         glUnmapBuffer(ID);
 }
-
 void VertexBuffer::Rebuild()
 {    //glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertexPositions), &fNewData[0]);
     glBindBuffer(GL_ARRAY_BUFFER, ID);
@@ -95,10 +94,10 @@ void IndexBuffer::Unbind()
 //__________________________________ TEXTURE BUFFER CLASS __________________________________________________________________________________________
 TextureBuffer::~TextureBuffer()
 {
-    delete(Image);
-    glDeleteBuffers(1, &ID);   
+//    delete(Image);
+//    glDeleteBuffers(1, &ID);   
 }
-TextureBuffer::TextureBuffer(Texture *img, Vec2 *data,  GLsizei count)
+TextureBuffer::TextureBuffer(Texture &img, Vec2 *data,  GLsizei count)
              : ElementCount(count) 
 {
     Data = new Vec2[count];
@@ -114,7 +113,7 @@ TextureBuffer::TextureBuffer(Texture *img, Vec2 *data,  GLsizei count)
 }
 void TextureBuffer::Bind()
 {
-    Image->Bind();
+    Image.Bind();
 
 //glEnableVertexAttribArray(TEXTURE_ATTRIB);
       glBindBuffer(GL_ARRAY_BUFFER, ID);      
@@ -160,8 +159,8 @@ ColorBuffer::ColorBuffer(Vec3 *ColorData, GLsizei count)
 }
 void ColorBuffer::Bind()
 {
-    glBindBuffer(GL_COLOR_ARRAY, ID);// GL_ARRAY_BUFFER
-        glColorPointer( 3, GL_FLOAT, 0, (char *) NULL);
+    glBindBuffer(GL_ARRAY_BUFFER, ID);
+        glColorPointer(3, GL_FLOAT, 0, (char *) NULL);
             glEnableClientState(GL_COLOR_ARRAY);
 }
 void ColorBuffer::Unbind(){
@@ -231,7 +230,7 @@ FrameBuffer::~FrameBuffer()
 
 
 
-FrameBuffer::FrameBuffer(Shader *shader, GLuint  width, GLuint height)
+FrameBuffer::FrameBuffer(Shader &shader, GLuint  width, GLuint height)
     : Width(width),
       Height(height), DrawBufferCount(0)
 {
@@ -268,7 +267,7 @@ glDrawBuffers(sizeof(draw_buffers)/ sizeof(draw_buffers[0]), draw_buffers);
 
 void FrameBuffer::Bind()
 {
-    FBShader->Enable();
+    FBShader.Enable();
 
     glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, ID);
         glClearColor(1,0,0,1.0f);
@@ -282,7 +281,7 @@ void FrameBuffer::Unbind()
 
   //  glViewport(0,0,WindowWidth, WindowHeight);
 
-    FBShader->Disable();
+    FBShader.Disable();
     glBindFramebufferEXT(GL_FRAMEBUFFER, 0);
 
 }
@@ -434,17 +433,6 @@ void FrameBuffer::AttachTextureBuffer(Texture *texture)
 }
 
 
-
-
-
-
-
-
-
-
-
-
-
 //glRenderbufferStorageMultisample() creates a renderbuffer image for multisample anti-aliasing rendering mode.
 
 
@@ -455,7 +443,7 @@ RenderBuffer::~RenderBuffer()
     glBindRenderbufferEXT(GL_RENDERBUFFER, 0);
     glDeleteRenderbuffersEXT(1, &ID);
 }
-RenderBuffer::RenderBuffer(Shader *shader, GLuint width, GLuint height)
+RenderBuffer::RenderBuffer(Shader &shader, GLuint width, GLuint height)
     : Width(width),
       Height(height)
 {
@@ -478,18 +466,14 @@ RenderBuffer::RenderBuffer(Shader *shader, GLuint width, GLuint height)
 }
 void RenderBuffer::Bind()
 {
- 
-    RBShader->Enable();
+    RBShader.Enable();
     glBindRenderbufferEXT(GL_RENDERBUFFER, ID);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
- 
-        
 }
 
 void RenderBuffer::Unbind()
 {
-
-    RBShader->Disable();
+    RBShader.Disable();
     glBindRenderbufferEXT(GL_RENDERBUFFER, 0);
 }
 void RenderBuffer::Render()
@@ -598,8 +582,8 @@ VAOBuffer::VAOBuffer()
         Normals  = nullptr;
         Textures = nullptr;
         Indices  = nullptr;
+        Colors   = nullptr;
 }
-
 
 void VAOBuffer::Attach(VertexBuffer  *vertices)
 {
@@ -620,12 +604,19 @@ void VAOBuffer::Attach(TextureBuffer *texture)
 {
     Textures = texture;
 }
+void VAOBuffer::Attach(ColorBuffer   *color)
+{
+    Colors = color;
+}
+
+
 void VAOBuffer::Bind()
 {
       if(Vertices)  Vertices->Bind();
       if(Indices)    Indices->Bind();
       if(Normals)    Normals->Bind();
       if(Textures)  Textures->Bind();
+      if(Colors)      Colors->Bind();
 }
 void VAOBuffer::Unbind()
 {

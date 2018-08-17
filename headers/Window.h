@@ -21,17 +21,23 @@
 #include <iostream>
 #include <Windows.h>
 #include "glm.hpp"
-
+#include<ctime>
 #define SCREENWIDTH       640
 #define SCREENHEIGHT      480
 
+#define RADIANS(x)   ((x)  * 0.01745329251)
+#define DEGREES(x)   ((x)  * 57.2957795131)
+
+//#define RADIANS(x)   ((x) * (M_PI / 180)) 
+//#define DEGREES(x)   ((x) * (180  / M_PI))
+
 class Texture;
+class Camera;
+
 extern 
 Texture *BlockTexture,
         *StoneTexture, 
         *ShadowTexture;
-
-
 
 //const bool TRACE = true;
 #define TRACE
@@ -47,17 +53,21 @@ Texture *BlockTexture,
 #define PICK_ONE(a,b)             ((RANDOM(1) > .5) ? a : b)
 #define WaitKey                    system("PAUSE");
 
- float Squared(float x);
+
 
 //======================================================================================================================================================================
 //_____________________________________________________________  MACROS  _______________________________________________________________________________________________
 
 #define Print(x)                   std::cout << x << std::endl
+#define PrintXY(S,xx,yy)           COORD p = {xx, yy};\
+                                   SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), p);\
+                                   Print(S);
+
 #define LOG_CALLBACK(x)            std::cout << (x) << std::endl
 
 /*************** DEBUG MACROS FOR DISPLAYING OPEN_GL ERRORS *****************************/
 #define ASSERT(x) if(!(x)){exit(EXIT_FAILURE);}
- 
+
 
 #ifdef TRACE
       #define  _TRACE(x)  std::cout << #x << std::endl
@@ -88,12 +98,10 @@ Texture *BlockTexture,
 #endif
 /*******************************************************************************************/
 
-
 #define GL_Color(c)      (c * (.0039215686627451))
 
 //======================================================================================================================================================================
 //__________________________________________________________ USEFUL DEFINES  ___________________________________________________________________________________________
- 
 
 #define MOUSE_LEFT       GLFW_MOUSE_BUTTON_LEFT
 #define MOUSE_RIGHT      GLFW_MOUSE_BUTTON_RIGHT
@@ -115,15 +123,20 @@ Texture *BlockTexture,
 #    define M_SQRT1_2     0.707106781186547524401
 #endif
 
-
-#define RADIANS(x)   ((x) * (M_PI / 180)) 
-#define DEGREES(x)   ((x) * (180  / M_PI))
 #define for_loop(itr, count)          for(int(itr) = 0; itr < (count); itr++)
 
 class  Window;
 extern Window *SCREEN;
 
 typedef RECT Rect;
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//                                         GLM COMPATIBILITY                                                                                                                       
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+#include <gtc/type_ptr.hpp>
+#include "gtc/matrix_transform.hpp"
+
 
 typedef glm::vec2 Vec2;
 typedef glm::vec3 Vec3;
@@ -135,8 +148,9 @@ typedef glm::mat4 Matrix;
 typedef glm::vec3 RGBf;
 typedef glm::vec4 RGBAf;
 
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//                                                            WINDOW CLASS                                                                                                                            
+//                                           CALLBACK CLASS                                                                                                                            
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 class CallBack
@@ -201,8 +215,6 @@ class CallBack
        void (*CallBackOnExit)                 ();
        void (*CallBackOnUser)                 (GLubyte type, int code, void* data1, void* data2);
 
-   //    void SetOnEvent(SDL_Event* Event);
-
        void SetOnInputFocus();
        void SetOnInputBlur();
        
@@ -231,10 +243,178 @@ class CallBack
 };
 
 
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//                                    WINDOWS CAMERA CLASS                                                                                                                            
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+class Cam
+{
+public:
+    Cam(){}
+#if 1
+    Cam(Vec3 position, Vec3 Rotation)
+    { 
+            FOV = 45.0;
+            AspectRatio = 640.0f / 480.0f;
+            Near = 0.1f;
+            Far  = 10000.0f;
+
+            Speed = 2.0;
+
+            Position = position;
+
+            Forward =  Vec3(0.0f, 0.0f, 1.0f);
+            Up      =  Vec3(0.0f, 1.0f, 0.0f);
+            
+            ProjectionMatrix  = glm::perspective(glm::radians(FOV),  AspectRatio, Near, Far);
+            View = GetViewProjection();
+    }
+
+    float    FOV, 
+             AspectRatio, 
+             Near,
+             Far;
+             
+    Vec3     Position,
+             Rotation,
+             Forward,
+             Right,
+             Up;
+             
+    Matrix   ProjectionMatrix;
+    Matrix   View;
+
+    float Speed;
+//    std::vector<Matrix> MatrixStack;
+//=======================================================================================================================================================
+// FUNCTIONS FOR THE CAMERA CLASS
+//=======================================================================================================================================================
+
+    void Update()
+    {
+           // ClampCamera();
+            Vec3 newFront;
+           newFront.x = cos(glm::radians(Rotation.y)) * cos(glm::radians(Rotation.x));
+           newFront.y = sin(glm::radians(Rotation.x));
+           newFront.z = cos(glm::radians(Rotation.y)) * cos(glm::radians(Rotation.x));
+
+    float  SIN_X = sin(RADIANS(Rotation.x - 90));
+    Position.x -= (cos(RADIANS(Rotation.y - 90)) * SIN_X) * Speed;
+    Position.y -=  cos(RADIANS(Rotation.x - 90)) * Speed;
+    Position.z -= (sin(RADIANS(Rotation.y - 90)) * SIN_X) * Speed;
+
+// newFront.x = cos(glm::radians(Rotation.y)) * sin(glm::radians(Rotation.x));
+// newFront.y = sin(glm::radians(Rotation.y));
+// newFront.z = cos(glm::radians(Rotation.y)) * cos(glm::radians(Rotation.x));
+    
+     
+            Forward = glm::normalize(newFront);
+    
+            ///Also re-calculate the Right and Up vector
+            Right = glm::normalize(glm::cross(Forward, Up));
+            Up    = glm::normalize(glm::cross(Right, Forward));
+    }
+ // Direction : Spherical coordinates to Cartesian coordinates conversion
+//glm::vec3 direction(
+//    cos(verticalAngle) * sin(horizontalAngle),
+//    sin(verticalAngle),
+//    cos(verticalAngle) * cos(horizontalAngle)
+//);
+//   
+
+    Matrix GetViewProjection()
+    {
+        View = glm::lookAt(Position, Position + Forward, Up);
+        return ProjectionMatrix * View;
+    }
+        
+    void Rotate(float pitch, float yaw)
+    {
+        Rotation.y += yaw;
+        Rotation.x += pitch;
+    }
+    void MoveForward(float speed)
+    {
+            Forward  = glm::normalize(Forward); // Not Sure if This Is Currently Needed
+            Position += (Speed * Forward);
+            View = glm::translate(glm::mat4(1.0f), Position);
+    }
+    void MoveBack(float speed)
+    {
+            Forward  = glm::normalize(Forward); // Not Sure if This Is Currently Needed
+            Position -= (Speed * Forward);
+            View = glm::translate(glm::mat4(1.0f), Position);
+    }
+    void StrifeLeft(float speed)
+    {
+            Position -= glm::normalize(glm::cross(Forward,Up)) * Speed;
+    }
+    void StrifeRight(float speed)
+    {
+            Position += glm::normalize(glm::cross(Forward,Up)) * Speed;
+    }
+//=======================================================================================================================================================
+
+    void ClampCamera()
+    {
+      if ( Rotation.x > 90)  Rotation.x =  90;
+      if ( Rotation.x < -90) Rotation.x = -90;
+      if ( Rotation.y < .0)    Rotation.y  += 360.0f;
+      if ( Rotation.y > 360.0f)  Rotation.y  -= 360.0f;
+    }
+
+    Matrix RotateX(GLfloat Angle)
+    {
+        Matrix ret;
+            
+        return ret;
+    }
+    Matrix RotateY(GLfloat Angle)
+    {
+        Matrix ret;
+            
+        return ret;
+    }
+    Matrix RotateZ(GLfloat Angle)
+    {
+        Matrix ret;
+            
+        return ret;
+    }
+#endif
+
+};
+
+
+//void CAM_moveCamera(Camera *cam, GLfloat dir)
+//{
+//  GLfloat rad= (cam->camYaw + dir) * (M_PI/180.0);
+//
+//  cam->camX -= sin(rad) * cam->moveVel;
+//  cam->camZ -= cos(rad) * cam->moveVel;
+//}
+
+
+//int foo()
+//{
+//        glm::vec4 Position = glm::vec4(glm::vec3(0.0), 1.0);
+//        glm::mat4 Model = glm::mat4(1.0);
+//        Model[4] = glm::vec4(1.0, 1.0, 0.0, 1.0);
+//        glm::vec4 Transformed = Model * Position;
+//        return 0;
+//}
+//
 
 
 
-class Window{
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//                                         WINDOW CLASS                                                                                                                            
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+class Window
+{
 public:
         Window(){}
         ~Window(){glfwTerminate();}
@@ -242,8 +422,7 @@ public:
 	    
         int     X,     Y,
             WIDTH,HEIGHT;
-	    
- 
+
         HWND            Hwnd;       // HWND
         char           *TITLE;
         GLFWwindow     *glCONTEXT;   
@@ -252,13 +431,17 @@ public:
         unsigned   int  FRAME_COUNT;
         unsigned   int  FPS;
         
-        struct FrameBuffer{
+
+
+        struct FrameBuffer
+        {
             int WIDTH,
                 HEIGHT;
            GLuint NAME;
         }FRAME_BUFFER;
         
-        struct MouseProperties{
+        struct MouseProperties
+        {
             bool Button[5];      
             int  Action,
                  Modifications;
@@ -267,13 +450,14 @@ public:
             int  OldX,Oldy;
             int  MouseMoveX, 
                  MouseMoveY;
-            inline bool IsButtonPressed (int button){return Button[button];}
+            inline bool IsButtonPressed (int button){ return Button[button]; }
             inline void HIDE(){glfwSetInputMode(SCREEN->glCONTEXT, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);}
             inline void SHOW(){glfwSetInputMode(SCREEN->glCONTEXT, GLFW_CURSOR, GLFW_CURSOR_NORMAL);} 
         }MOUSE;
         
         
-        struct Key_Board{
+        struct Key_Board
+        {
              int Key, 
                  Scancode,  
                  Action, 
@@ -283,6 +467,9 @@ public:
         }KEY_BOARD;
         
         CallBack Callbacks;
+
+        Cam Camera;
+
 private:
     unsigned short SyncRATE;
     int           FrameRate;
@@ -302,13 +489,13 @@ private:
 
 
 static void Error_callback           (         int,    const char*);
-static void Resize_Callback          (GLFWwindow *window,int,int);
-static void Window_close_callback    (GLFWwindow *window);
-static void KeyBoard_Callback        (GLFWwindow *window,    int,    int, int, int);
-static void Mouse_Callback           (GLFWwindow *window,    int,    int, int);
-static void MouseMove_Callback       (GLFWwindow *window, double, double);
-static void DropFile_callback        (GLFWwindow *window,    int, const char**);
-static void Window_Size_Callback     (GLFWwindow *window,    int,    int);
+static void Resize_Callback          ( GLFWwindow *window,int,int);
+static void Window_close_callback    ( GLFWwindow *window);
+static void KeyBoard_Callback        ( GLFWwindow *window,    int,    int, int, int);
+static void Mouse_Callback           ( GLFWwindow *window,    int,    int, int);
+static void MouseMove_Callback       ( GLFWwindow *window, double, double);
+static void DropFile_callback        ( GLFWwindow *window,    int, const char**);
+static void Window_Size_Callback     ( GLFWwindow *window,    int,    int);
 
 };
  
@@ -344,8 +531,13 @@ extern float WrapAngle(float angle);
 
 
 
+extern Matrix MatCast(float arr[16]);
 
+extern inline float Max(float p1,float p2);
+extern inline float Min(float p1, float p2);
 
+extern inline float Squared(float x);
+extern inline float GetDistance(Vec3 p1, Vec3 p2);
 
 
 //

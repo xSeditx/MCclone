@@ -1,6 +1,9 @@
    
 #include"core.h"
 
+std::vector<Sphere*> Sphere::SphereList;
+unsigned int  Sphere::SphereCount;
+
 int Block::BlockCount = 0;
 // You are going to see a bit of a mess here as I just setup the Batcher to handle all the Vertices and have not cleaned out the Code I am not really using
 // This means you are going to see multiple forms of buffers and Arrays all carrying the same data, I just finished getting that up and running when I started playing 
@@ -166,8 +169,8 @@ Block::Block(Vec3 pos, MetaData &blockdata)
    Vertices = new VertexBuffer(&VertexList[0], 24);
    Indices  = new IndexBuffer (&IndexList[0] , 36);
 
-   if(blockdata.Type == Dirt)   Textures = new TextureBuffer(BlockTexture , &TextureCoords[0], 24);
-   if(blockdata.Type == Stone)  Textures = new TextureBuffer(StoneTexture , &TextureCoords[0], 24);
+   if(blockdata.Type == Dirt)   Textures = new TextureBuffer(*BlockTexture , &TextureCoords[0], 24);
+   if(blockdata.Type == Stone)  Textures = new TextureBuffer(*StoneTexture , &TextureCoords[0], 24);
    Normals  = new NormalBuffer (Norms, 24);
 
    VAO = new VAOBuffer();
@@ -184,8 +187,17 @@ Block::Block(Vec3 pos, MetaData &blockdata)
    std::memcpy(&Verts  ,            &V,  sizeof(V));
 
 
+    Transform = glm::mat4(1.0f); // Set Identity and Rotate all axis followed with the Translation.
+    Transform = glm::rotate(Transform,  glm::radians(Rotation.x),  Vec3(1.0f, 0.0f, 0.0f));
+    Transform = glm::rotate(Transform,  glm::radians(Rotation.y),  Vec3(0.0f, 1.0f, 0.0f));
+    Transform = glm::rotate(Transform,  glm::radians(Rotation.z),  Vec3(0.0f, 0.0f, 1.0f));
+    Transform = glm::translate(Transform, Position); 
+
+// model_matrix = glm::translate(glm::rotate(glm::scale( mat4(1.0f), scaling), rotation_angle, rotation_axis), translation);
 
 
+//glm::mat4 myModelMatrix = myTranslationMatrix * myRotationMatrix * myScaleMatrix;
+//glm::vec4 myTransformedVector = myModelMatrix * myOriginalVector;
 }
 
 void Block::Bind()
@@ -199,11 +211,19 @@ void Block::Unbind()
 void Block::Render()
 {
 //f_TRACE(Print("Block Render"));  // A Debug Option I designed a while ago that I can turn on and it informs me what functions are being called
+
 // Normal Render
-// Displays the Summed Normals acros a polygon. Needs a bit of work but currently need to work on my Batch Render;
+// Displays the Summed Normals acros a polygon.
+// Needs a bit of work but currently need to work on my Batch Render;
 
     Vec3 Pos1, Pos2, Offset;
 
+//  Transform = glm::mat4(1.0f); // Set Identity and Rotate all axis followed with the Translation.
+//  Transform = glm::rotate(Transform, glm::radians(Rotation.x),  Vec3(1.0f, 0.0f, 0.0f));
+//  Transform = glm::rotate(Transform, glm::radians(Rotation.y),  Vec3(0.0f, 1.0f, 0.0f));
+//  Transform = glm::rotate(Transform, glm::radians(Rotation.z),  Vec3(0.0f, 0.0f, 1.0f));
+//  Transform = glm::translate(Transform, Position); 
+    
     glBegin(GL_LINES);
         for(int Index = 0; Index < 36; Index++)
         {
@@ -216,22 +236,25 @@ void Block::Render()
             glVertex3f(Pos2.x, Pos2.y, Pos2.z);
         }
     glEnd();
- 
+  
 
-    glPushMatrix();
+    //glPushMatrix();
     
-        glTranslatef(Position.x, Position.y, Position.z);
-        glRotatef(Rotation.x, 1.0f, 0.0f, 0.0f);
-        glRotatef(Rotation.y, 0.0f, 1.0f, 0.0f);
-        glRotatef(Rotation.z, 0.0f, 0.0f, 1.0f);
-
+    // glTranslatef(Position.x, Position.y, Position.z);
+    // glRotatef(Rotation.x, 1.0f, 0.0f, 0.0f);
+    // glRotatef(Rotation.y, 0.0f, 1.0f, 0.0f);
+    // glRotatef(Rotation.z, 0.0f, 0.0f, 1.0f);
+    //
         Bind();
             glDrawElements(GL_TRIANGLES, Indices->ElementCount , GL_UNSIGNED_INT, nullptr);
         Unbind();
-    glPopMatrix();
+    //glPopMatrix();
+
 }
 
-
+void Block::OnUpdate()
+{
+}
 
 // As stated above, All experimental below. I don't really use it right now but for rendering the scene quickly to get an Image
 // to the FBO it made it quick and easy.
@@ -266,6 +289,17 @@ void BatchRender::Unbind()
 
 void BatchRender::Render()
 {
+
+// Remember I am going to have to add a Model Transform to make this work
+// ====================================== NEW CAMERA STUFF TO MAKE THE MODEL MATRIX ==============================================
+//  Matrix Temp;
+//  Temp = glm::rotate(Temp, glm::radians(Rotation.x), Vec3(Rotation.x, 0.0f,  0.0f));
+//  Temp = glm::rotate(Temp, glm::radians(Rotation.y), Vec3(0.0f, Rotation.y,  0.0f));
+//  Temp = glm::rotate(Temp, glm::radians(Rotation.z), Vec3(0.0f, 0.0f,  Rotation.z));
+//  Transform = glm::translate(Temp, Vec3(Position.x, Position.y, Position.z));
+//
+// ===============================================================================================================================
+
     glPushMatrix();
         Bind();
             glDrawElements(GL_TRIANGLES, Indices->ElementCount , GL_UNSIGNED_INT, nullptr);
@@ -305,7 +339,7 @@ void BatchRender::Build()
 {
     Vertices = new VertexBuffer  (&VertexBuffers[0], VertexCount);
     Indices  = new IndexBuffer   (&IndexBuffers[0], IndexCount);
-    Textures = new TextureBuffer (BatchTexture, &TextureBuffers[0], VertexCount);
+    Textures = new TextureBuffer (*BatchTexture, &TextureBuffers[0], VertexCount);
 }
 
 
@@ -440,7 +474,6 @@ Sky::Sky(Texture *skytext)
         TextureCoords.push_back(UVs[Index]);
 
     }
-
     for_loop(Index, 36)
     {
         IndexList.push_back(Indexdata[Index]);
@@ -448,26 +481,22 @@ Sky::Sky(Texture *skytext)
 
 
     
-   Vertices = new VertexBuffer(&VertexList[0], 24);
-   Indices  = new IndexBuffer (&IndexList[0] , 36);
+    Vertices = new VertexBuffer(&VertexList[0], 24);
+    Indices  = new IndexBuffer (&IndexList[0] , 36);
 
-   Textures = new TextureBuffer(skytext , &TextureCoords[0], 24);
-
-
-   VAO = new VAOBuffer();
-
-   VAO->Attach(Vertices);
-   VAO->Attach(Indices);
-   VAO->Attach(Textures);
+    Textures = new TextureBuffer(*skytext , &TextureCoords[0], 24);
 
 
-   std::memcpy(&UV     ,          &UVs,  sizeof(UVs));
-   std::memcpy(&Indice ,     Indexdata,  sizeof(Indexdata));
-   std::memcpy(&Verts  ,            &V,  sizeof(V));
+    VAO = new VAOBuffer();
+
+    VAO->Attach(Vertices);
+    VAO->Attach(Indices);
+    VAO->Attach(Textures);
 
 
-
-
+    std::memcpy(&UV     ,          &UVs,  sizeof(UVs));
+    std::memcpy(&Indice ,     Indexdata,  sizeof(Indexdata));
+    std::memcpy(&Verts  ,            &V,  sizeof(V));
 }
 
 
@@ -497,6 +526,147 @@ void Sky::Render(Vec3 rot)
         glPopMatrix();
 
 }
+
+
+void UpdateModelMatrix()
+{
+//  Matrix ModelMatrix = glm::mat4(1.0f);;
+//  ModelMatrix = glm::mat4();
+//  ModelMatrix = glm::translate(ModelMatrix, Translation);
+//  ModelMatrix = glm::scale(ModelMatrix, Scale);
+//  ModelMatrix = glm::rotate(ModelMatrix, rotAngle, Rotation);
+//  glUniformMatrix4fv(location, 1, GL_FALSE, glm::value_ptr(ModelMatrix));
+}
+
+
+
+
+
+
+
+ Sphere::Sphere(Vec3 pos, float radius, int sectors) 
+    : Position (pos),
+      VertexCount(0),
+      ColorCount(0),
+      Radius(radius)
+      //(Shader("Basic.vert", "Basic.Frag"))
+{
+
+   float size = 20;
+   int IndexCount =0;
+   float  x=0,   y=0,   z=0;
+   float x1=0,  y1=0,  z1=0;
+   float x2=0,  y2=0,  z2=0;
+   float x3=0,  y3=0,  z3=0;
+   std::vector<GLuint> Ind;
+   for(float Long =0;Long < 180;Long+=size){
+        for(float Lat =0;Lat < 360;Lat+=size){
+               x = radius * (sin(RADIANS(Lat)) * cos(RADIANS(Long)));
+               y = radius * (sin(RADIANS(Lat)) * sin(RADIANS(Long)));
+               z = radius *  cos(RADIANS(Lat));
+            
+               x1 = radius * (sin(RADIANS(Lat + size)) * cos(RADIANS(Long)));
+               y1 = radius * (sin(RADIANS(Lat + size)) * sin(RADIANS(Long)));
+               z1 = radius *  cos(RADIANS(Lat + size));
+            
+               x2 = radius * (sin(RADIANS(Lat)) * cos(RADIANS(Long+size)));
+               y2 = radius * (sin(RADIANS(Lat)) * sin(RADIANS(Long+size)));
+               z2 = radius *  cos(RADIANS(Lat));
+            
+               x3 = radius * (sin(RADIANS(Lat+ size)) * cos(RADIANS(Long+ size)));
+               y3 = radius * (sin(RADIANS(Lat+ size)) * sin(RADIANS(Long+ size)));
+               z3 = radius *  cos(RADIANS(Lat+ size));
+
+               Colors[ColorCount].r = GL_Color(x * 255);
+               Colors[ColorCount].g = GL_Color(y * 255);
+               Colors[ColorCount].b = GL_Color(z * 255);
+
+               Vertices[VertexCount].x   =  x ;
+               Vertices[VertexCount].y   =  y ;
+               Vertices[VertexCount].z   =  z ;
+
+               Colors[ColorCount + 1].r = GL_Color(x * 255);
+               Colors[ColorCount + 1].g = GL_Color(y * 255);
+               Colors[ColorCount + 1].b = GL_Color(z * 255);
+               Vertices[VertexCount + 1].x   =  x1 ;
+               Vertices[VertexCount + 1].y   =  y1;
+               Vertices[VertexCount + 1].z   =  z1;
+
+               Colors[ColorCount + 2].r = GL_Color(x * 255);
+               Colors[ColorCount + 2].g = GL_Color(y * 255);
+               Colors[ColorCount + 2].b = GL_Color(z * 255);
+               Vertices[VertexCount + 2].x   =  x2 ;
+               Vertices[VertexCount + 2].y   =  y2 ;
+               Vertices[VertexCount + 2].z   =  z2 ;
+
+               Colors[ColorCount + 3].r = GL_Color(x * 255);
+               Colors[ColorCount + 3].g = GL_Color(y * 255);
+               Colors[ColorCount + 3].b = GL_Color(z * 255);
+               Vertices[VertexCount + 3].x   =  x3 ;
+               Vertices[VertexCount + 3].y   =  y3 ;
+               Vertices[VertexCount + 3].z   =  z3 ;
+
+
+               Ind.push_back(VertexCount); 
+               Ind.push_back(VertexCount + 1); 
+               Ind.push_back(VertexCount + 2);
+
+               Ind.push_back(VertexCount + 1); 
+               Ind.push_back(VertexCount + 3); 
+               Ind.push_back(VertexCount + 2);
+
+               Indices[IndexCount]   = VertexCount;
+               Indices[IndexCount+1] = VertexCount + 1;
+               Indices[IndexCount+2] = VertexCount + 2;
+
+               Indices[IndexCount+3] = VertexCount + 1;
+               Indices[IndexCount+4] = VertexCount + 3;
+               Indices[IndexCount+5] = VertexCount + 2;
+
+
+               VertexCount += 4;
+               ColorCount  += 4;
+               IndexCount += 6;
+        }
+   }
+
+   VAO.Vertices = new VertexBuffer(Vertices, VertexCount);
+   VAO.Indices  = new IndexBuffer(Indices, IndexCount);
+   VAO.Colors   = new ColorBuffer(Colors, ColorCount);
+
+   Mesh_ID = SphereCount++;
+
+   SphereList.push_back(this);
+}                                                                       
+                                                                                                                                    
+void Sphere::Update ()                                                                                                              
+{                                                                                                                                  
+}                                    
+ 
+void Sphere::Render ()
+{
+
+  glPushMatrix();
+      glTranslatef(Position.x,  Position.y, Position.z);
+      glRotatef(Rotation.x, 1,0,0);
+      glRotatef(Rotation.z, 0,0,1);
+      glRotatef(Rotation.y, 0,1,0);
+      VAO.Bind();
+         glDrawArrays(GL_TRIANGLE_STRIP, 0, VertexCount);
+        //glDrawElements(GL_TRIANGLES, VAO.Indices->ElementCount , GL_UNSIGNED_INT, nullptr);
+      VAO.Unbind();
+  glPopMatrix();
+}                                                                                                     
+                                                                                                                                    
+                                                                                                                  
+void Sphere::Rotate(float x, float y, float z)
+{
+    Rotation.x += x;
+    Rotation.y += y;
+    Rotation.z += z;
+}
+
+
 
 //    GLfloat Alpha = 0; // Fix this to work off of 24 Vertices in the future. May need it for Simulated lighting.
 //

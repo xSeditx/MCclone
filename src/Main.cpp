@@ -27,36 +27,40 @@ bool View = false;
 
 /// I also explictly handled this before in the main loop for debug reasons, I have a tiny persistant error with the 
 //keyboard and mouse  I have yet to fix so the callback leads to delayed response right now.
-
 void Keydown(GLushort Keycode, GLushort ScanCode, GLushort Modifier)
 {
 // --------------------- Handle Input ---------------------------------------------
         if(SCREEN->KEY_BOARD.Key == GLFW_KEY_SPACE)
         {
              View = !View;
-             if (View == true) glPolygonMode(GL_FRONT_AND_BACK, GL_LINE );
-             if (View == false)    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL );
+             if (View == true)    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE );
+             if (View == false)   glPolygonMode(GL_FRONT_AND_BACK, GL_FILL );
              Sleep(200);
         }
          
         if(SCREEN->KEY_BOARD.Key == GLFW_KEY_RIGHT)
         {
-            Camera1.MoveRight(.2);
+        //    Camera1.MoveRight(0.2f);
+            SCREEN->Camera.StrifeRight(0.02f); // New Matrix Camera
         } 
         if(SCREEN->KEY_BOARD.Key == GLFW_KEY_LEFT)
         {
-            Camera1.MoveLeft(.2);
+         //   Camera1.MoveLeft(0.2f);
+            SCREEN->Camera.StrifeLeft(0.02f); // New Matrix Camera
         }
         if(SCREEN->KEY_BOARD.Key == GLFW_KEY_DOWN)
         { 
-            Camera1.MoveForward(.2);
+         //   Camera1.MoveForward(0.2f);
+             SCREEN->Camera.MoveBack(0.02f); // New Matrix Camera
         }
         if(SCREEN->KEY_BOARD.Key == GLFW_KEY_UP) 
         {
-             Camera1.MoveBack(.2);
+           //  Camera1.MoveBack(0.2f);
+             SCREEN->Camera.MoveForward(0.02f); // New Matrix Camera
         }
-  
 }
+
+
 
 
 
@@ -98,6 +102,10 @@ void main()
                
          Camera1.Position = Vec3(0,0,0);
          Camera1.Rotation = Vec3(-180,-180,0);
+// Matrix Implementation for the Main Camera in the Window class
+         MainWin.Camera =   Cam(Vec3(10,10,0),
+                                Vec3(-180,-180,0.0f));
+
          Chunk.reserve(CHUNK_SIZE*CHUNK_SIZE);
          int ZIndex = 0;
 
@@ -106,7 +114,7 @@ void main()
          {
              for_loop(XIndex, CHUNK_SIZE)
              {
-                  Block *B = new Block(Vec3(XIndex * 2.001, ZIndex * 2.001f, YIndex * 2.001), MetaData(1, Stone));
+                  Block *B = new Block(Vec3(XIndex * 2.001 - (CHUNK_SIZE / 2), ZIndex * 2.001f, YIndex * 2.001 - (CHUNK_SIZE / 2)), MetaData(1, Stone));
                   Batcher.Submit(B);
                   Chunk.emplace_back(B);
              }
@@ -123,11 +131,14 @@ void main()
          Batcher.Build();
 
 //     Sky *SkyBoxCube = new Sky(SkyBox);   
+
+
+
 //     glEnable(GL_CULL_FACE); 
 //     glCullFace(GL_BACK);
        
        
-        float Brightness = .5;
+float Brightness = .7;
 #if 1
       LightSource Light(BasicShader,
                         Vec4(10,7,10,0),
@@ -144,14 +155,41 @@ void main()
 #endif
 
 
-        FrameBuffer *FB = new FrameBuffer(&BasicShader, 640,480);
+        FrameBuffer *FB = new FrameBuffer(BasicShader, 640,480);
+
+        Vec3 COL(1.0,0.0,0.0);
+        BasicShader.AttachUniform("Color", Uniformtype::Vector3, (Vec3*)&COL);
+
+
+        GLfloat FF_MODELVIEW[16], FF_PROJECTION[16];
+        glGetFloatv(GL_PROJECTION_MATRIX,  &FF_PROJECTION[0]) ;
+        Matrix Projection;
+
+        Projection[0][0] = FF_PROJECTION[0];
+        Projection[0][1] = FF_PROJECTION[1];
+        Projection[0][2] = FF_PROJECTION[2];
+        Projection[0][3] = FF_PROJECTION[3];
+
+        Projection[1][0] = FF_PROJECTION[4];
+        Projection[1][1] = FF_PROJECTION[5];
+        Projection[1][2] = FF_PROJECTION[6];
+        Projection[1][3] = FF_PROJECTION[7];
+
+        Projection[2][0] = FF_PROJECTION[8];
+        Projection[2][1] = FF_PROJECTION[9];
+        Projection[2][2] = FF_PROJECTION[10];
+        Projection[2][3] = FF_PROJECTION[11];
+
+        Projection[3][0] = FF_PROJECTION[12];
+        Projection[3][1] = FF_PROJECTION[13];
+        Projection[3][2] = FF_PROJECTION[14];
+        Projection[3][3] = FF_PROJECTION[15];
 
 
         while(GAME_LOOP())
         {
           CLS();
-          //SkyBoxCube->Render(Camera1.Rotation);
-          // Sky->Render(Camera1.Rotation);
+
            Angle++; if(Angle > 360)Angle = 0;
        
            if(SCREEN->KEY_BOARD.Key == GLFW_KEY_RIGHT) { Camera1.MoveRight(.1);   } 
@@ -160,80 +198,36 @@ void main()
            if(SCREEN->KEY_BOARD.Key == GLFW_KEY_UP)    { Camera1.MoveBack(.1);    }
        
            Camera1.Rotate((-(SCREEN->MOUSE.X - OLDMX)), (SCREEN->MOUSE.Y - OLDMY) ) ;
+//         MainWin.Camera.Rotate(-(SCREEN->MOUSE.X - OLDMX) / 4, (SCREEN->MOUSE.Y - OLDMY) / 4 );
+// MainWin.Camera.Rotate(-(SCREEN->MOUSE.X - OLDMX), (SCREEN->MOUSE.Y - OLDMY));
            OLDMX = SCREEN->MOUSE.X; // MOUSE.MouseMove.X only works when the callback is being activated
            OLDMY = SCREEN->MOUSE.Y; // Must gather the true mousemovement here in this function 
            Camera1.Update();             // <---- CAMERA                 
+           MainWin.Camera.Update();
 
            Light.SetPosition(Vec3(std::cos(RADIANS(Angle)) * 20,0,std::sin(RADIANS(Angle)) * 20), Vec3(0, Camera1.Rotation.y,0));
 
 
-
-//FB->Bind();
-//m_Shader.Enable();
-////ShadowShader->Enable();
-//#if 0
-////        for(auto &Block : Chunk)
-////        {
-////            Block->Render();
-////        }
-//#else
-//Light.Shadow->Bind();
-//Light.Shadow->FBuffer->Bind();
-// glPushMatrix();
-// glLoadIdentity();
-// glTranslatef(Light.Position.x, Light.Position.y, Light.Position.z);
-// //     glMatrixMode(GL_PROJECTION);
-// //     glLoadIdentity(); 
-// //     gluOrtho2D(0, 640.0, 480.0, 0.0f);
-// //   glMatrixMode(GL_MODELVIEW);
-//   Batcher.Render();
-//
-////      glMatrixMode(GL_PROJECTION);
-////      glLoadIdentity(); 
-////      gluPerspective(30, 640.0 / 480.0, 1, 1000);
-////
-////    glMatrixMode(GL_MODELVIEW);
-//glPopMatrix();
-//
-//Light.Shadow->FBuffer->Unbind();
-//Light.Shadow->Unbind();
-//#endif
-////ShadowShader->Disable();
-//m_Shader.Disable();
-//FB->Unbind();
-//FB->Render();   
-
-//
 BasicShader.Enable();
-BasicShader.SetUniformMat4("MVP", Camera1.ViewProjectionMatrix);
-BasicShader.SetUniform3f("Color", Vec3(1.0f,1.0f,0.0f));
-// BasicShader.SetUniform3f("Rotation", Camera1.Rotation);
-BasicShader.SetUniform3f("Position", Camera1.Position);
-//Light.Shadow->FBuffer->Render();
-
 #if 0
             for(auto &Block : Chunk)
             {
-               // for_loop(Index, Block->Vertices->ElementCount)
-               // {
-               //    Block->Vertices->Data[Index] = Block->Vertices->Data[Index] + 
-               //             Vec3(RANDOM(.2) - .1, RANDOM(.2) - .1,RANDOM(.2) - .1); 
-               // }
-               // Block->Vertices->Rebuild();
-                Block->Render();
+                 Block.Render();
             }
 #else
+        Matrix ModelView = glm::mat4(1.0f);
+        BasicShader.SetUniformMat4("ProjectionMatrix", MainWin.Camera.GetViewProjection());//Camera1.ViewProjectionMatrix);
+        BasicShader.SetUniformMat4("ModelMatrix", ModelView);//Camera1.ViewProjectionMatrix);
         Batcher.Render();
 #endif
 BasicShader.Disable();
 
-    //  Light.Render();
-
   //Print(Camera1.Rotation.x << " : " << Camera1.Rotation.y << ": " << Camera1.Rotation.z); 
-  //Print(MainWin.FPS);
-          SYNC();
-    }
+  //Print(MainWin.FPS);                                                                                                                                                    
+        SYNC();
 
+
+    }
 
 
     Light.Delete();
