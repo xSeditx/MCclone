@@ -545,13 +545,13 @@ void UpdateModelMatrix()
 
 
  Sphere::Sphere(Vec3 pos, float radius, int sectors) 
-    : Position (pos),
+    : 
       VertexCount(0),
       ColorCount(0),
       Radius(radius)
       //(Shader("Basic.vert", "Basic.Frag"))
 {
-
+    Position = pos;
    float size = 20;
    int IndexCount =0;
    float  x=0,   y=0,   z=0;
@@ -629,10 +629,10 @@ void UpdateModelMatrix()
                IndexCount += 6;
         }
    }
-
-   VAO.Vertices = new VertexBuffer(Vertices, VertexCount);
-   VAO.Indices  = new IndexBuffer(Indices, IndexCount);
-   VAO.Colors   = new ColorBuffer(Colors, ColorCount);
+   VAO = new VAOBuffer();
+   VAO->Vertices = new VertexBuffer(Vertices, VertexCount);
+   VAO->Indices  = new IndexBuffer(Indices, IndexCount);
+   VAO->Colors   = new ColorBuffer(Colors, ColorCount);
 
    Mesh_ID = SphereCount++;
 
@@ -651,10 +651,10 @@ void Sphere::Render ()
       glRotatef(Rotation.x, 1,0,0);
       glRotatef(Rotation.z, 0,0,1);
       glRotatef(Rotation.y, 0,1,0);
-      VAO.Bind();
+      VAO->Bind();
          glDrawArrays(GL_TRIANGLE_STRIP, 0, VertexCount);
         //glDrawElements(GL_TRIANGLES, VAO.Indices->ElementCount , GL_UNSIGNED_INT, nullptr);
-      VAO.Unbind();
+      VAO->Unbind();
   glPopMatrix();
 }                                                                                                     
                                                                                                                                     

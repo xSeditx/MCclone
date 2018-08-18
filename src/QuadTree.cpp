@@ -10,7 +10,7 @@ Node::~Node()
 Node::Node(Vec2 pos, Vec2 size)
     : Position(pos),
       Size(size),
-      Capacity(5),
+      Capacity(1),
       IsLeaf(true),
       Facing(NE)
 {
@@ -191,7 +191,7 @@ QT::QT(Vec2 position, Vec2 size)
 
 void QT::Init()
 {
-    RootNode = new Node(Position,Size);
+   RootNode = new Node(Position,Size);
    for_loop(Index , Collider::NumberOfObjects)
    {
        RootNode->Insert(Collider::CollisionList[Index]);

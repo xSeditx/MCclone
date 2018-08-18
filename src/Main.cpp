@@ -59,10 +59,11 @@ void Keydown(GLushort Keycode, GLushort ScanCode, GLushort Modifier)
              SCREEN->Camera.MoveForward(0.02f); // New Matrix Camera
         }
 }
+#include"Collision.h"
 
 
 
-
+QT *Tree;
 
 void main()
 {
@@ -87,7 +88,7 @@ void main()
 
 
        // SkyBox        = new Texture("Sky2.bmp");
-        Sky = new SkyBox(CubeMap);
+      //  Sky = new SkyBox(CubeMap);
 //-----------------------------------------------------------------------
   const GLubyte *extensions = glGetString( GL_EXTENSIONS );
   Print(extensions);
@@ -100,16 +101,25 @@ void main()
          BatchRender Batcher(BlockTexture), 
                      Batch2(StoneTexture);
                
-         Camera1.Position = Vec3(0,0,0);
+         Camera1.Position = Vec3(5,0,2);
          Camera1.Rotation = Vec3(-180,-180,0);
 // Matrix Implementation for the Main Camera in the Window class
          MainWin.Camera =   Cam(Vec3(10,10,0),
                                 Vec3(-180,-180,0.0f));
 
+
+        Sphere Ball (Vec3(50,0,50), 3, 8);       
+        Sphere Ball2(Vec3(40,0,40), 4, 8);       
+        Sphere Ball3(Vec3(60,0,60), 5, 8);
+
+        CollisionSphere Ballhitbox(&Ball , 3);        
+        CollisionSphere Ballhitbox2(&Ball2, 4);   
+       // CollisionSphere Ballhitbox3(&Ball3, 5);
+        CollisionSphere CameraHitbox(Camera1.Position, .1);
+        AABB BoxCollider(Vec3(-.5f, -.5f,-.5f), Vec3(.5f, .5f,.5f));
+
          Chunk.reserve(CHUNK_SIZE*CHUNK_SIZE);
          int ZIndex = 0;
-
-
          for_loop(YIndex, CHUNK_SIZE)
          {
              for_loop(XIndex, CHUNK_SIZE)
@@ -130,14 +140,16 @@ void main()
 
          Batcher.Build();
 
-//     Sky *SkyBoxCube = new Sky(SkyBox);   
+  //     Sky *SkyBoxCube = new Sky(SkyBox);   
 
 
 
 //     glEnable(GL_CULL_FACE); 
 //     glCullFace(GL_BACK);
        
-       
+       Tree = new QT(Vec2(50,50), Vec2(100.0f,100.0f));
+       Tree->Init();
+
 float Brightness = .7;
 #if 1
       LightSource Light(BasicShader,
@@ -188,8 +200,8 @@ float Brightness = .7;
 
         while(GAME_LOOP())
         {
-          CLS();
-
+          CLS();   
+           Tree->Update();
            Angle++; if(Angle > 360)Angle = 0;
        
            if(SCREEN->KEY_BOARD.Key == GLFW_KEY_RIGHT) { Camera1.MoveRight(.1);   } 
@@ -203,9 +215,18 @@ float Brightness = .7;
            OLDMX = SCREEN->MOUSE.X; // MOUSE.MouseMove.X only works when the callback is being activated
            OLDMY = SCREEN->MOUSE.Y; // Must gather the true mousemovement here in this function 
            Camera1.Update();             // <---- CAMERA                 
-           MainWin.Camera.Update();
+           //MainWin.Camera.Update();
 
            Light.SetPosition(Vec3(std::cos(RADIANS(Angle)) * 20,0,std::sin(RADIANS(Angle)) * 20), Vec3(0, Camera1.Rotation.y,0));
+        
+  
+                 
+           for(auto &C: Collider::CollisionList)
+           {
+               C->Update();
+           }
+
+         CameraHitbox.Body.Position = -Camera1.Position;
 
 
 BasicShader.Enable();
@@ -220,6 +241,7 @@ BasicShader.Enable();
         BasicShader.SetUniformMat4("ModelMatrix", ModelView);//Camera1.ViewProjectionMatrix);
         Batcher.Render();
 #endif
+        Ball.Render();Ball2.Render();Ball3.Render();
 BasicShader.Disable();
 
   //Print(Camera1.Rotation.x << " : " << Camera1.Rotation.y << ": " << Camera1.Rotation.z); 

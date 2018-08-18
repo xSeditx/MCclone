@@ -34,9 +34,8 @@ public:
 
     Vec3 Position;
 
-    VAOBuffer VAO;
-    GLuint VertexCount;
-
+    VAOBuffer *VAO;
+ 
     virtual void Bind(){}
     virtual void Unbind(){}
     virtual void Render(){}
@@ -78,17 +77,15 @@ public:
     NormalBuffer   *Normals;
     TextureBuffer  *Textures;
 
-    VAOBuffer      *VAO;
+//    VAOBuffer      *VAO;
 
     MetaData       *BlockData;
 
-//   SOMETHING IS CORRUPTED WITH THE COLOR BUFFER STUFF. WHEN I ATTEMPT TO MEMCPY THE COLOR OVER 
-//    IT NULLIFIES THE SIZE OF MY INDEXBUFFER FOR WHATEVER REASON AS A RESULT I AM TURNING IT OFF SINCE I DO NOT USE IT AND IT 
-//    IS PISSING ME OFF
-//    std::vector<Vec4>   ColorList;
-//    Vec3                Color[24]; 
-//    ColorBuffer           *Colors;
-//
+
+    std::vector<Vec3>   ColorList;
+    Vec3                Color[24]; 
+    ColorBuffer           *Colors;
+
 
 
     void Bind();
@@ -109,7 +106,7 @@ static int BlockCount;
 class Sphere : public Mesh
 {
 public:
-     Vec3 Position;
+    // Vec3 Position;
      Vec3 Rotation;
      Vec3 Scale;
 
@@ -128,8 +125,6 @@ public:// OpenGL Stuff
 
      GLuint VertexCount;
      GLuint ColorCount;
-
-     VAOBuffer VAO;
 
      Shader *SHADER;
 
